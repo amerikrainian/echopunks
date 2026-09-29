@@ -36,9 +36,7 @@ namespace Echopunks.Screens
                 }
                 // The completion layout: caption spoken, the marker = the run's score
                 // (maybe_3 — the GEnum216 0 its own Theme call selects).
-                int si = 0;
-                foreach (var kv in dict)
-                    LeaderboardRows.BuildStat(b, kv.Value, si++, caption: true, kv.Value.maybe_3);
+                LeaderboardRows.Build(b, dict.Values, caption: true, g => g.maybe_3);
             }
             catch (Exception ex) { Log.Error("[complete] leaderboards build failed", ex); }
         }

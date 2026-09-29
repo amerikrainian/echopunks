@@ -856,7 +856,8 @@ restored to the opener):
   context labeled by its header (explicit PushContext id — equal headers must not share one),
   up/down within a column, left/right to the same row clamped; empty cells and empty columns
   say "N/A" (user wording); header-less columns "Column n". Every vertical seam between popup
-  rows is wired explicitly (PopupEdges).
+  rows is wired explicitly (ColumnGrid.Edges). The grid itself is the shared UI/ColumnGrid
+  (also the histogram panels).
 
 **File speaking rules** (Readouts.cs helpers, used by every surface):
 - IDENTITY: file ids repeat across hosts — rows, readouts and the popup are all
@@ -982,14 +983,20 @@ an OnUpdate watch follows selection changes the mod didn't drive into focus (gat
 the solutions stop so a mouse click never yanks focus out of the action rows).
 
 **Leaderboard panels** (shared LeaderboardRows.cs — feeds PuzzleCompleteScreen's
-Leaderboards view AND the browser; one Tab stop per stat, user rule — Tab jumps
-Cycles/Size/Activity, arrows stay within): per stat, the caption, percentile cutoffs +
-friends' scores merged best-first (each behind the game's own Steam options:
-EnableHistograms/EnableLeaderboards default ON, ShowTop/TenthPercentile default OFF —
-absent rows are usually that gate), then one row per NON-EMPTY histogram bin "lo to
-hi: N%" (percent of the FULLEST bin — the server sends peak-normalized shape, no
-counts; single-value bins read as the bare number; empty bins skipped) with ", your
-score" on the marker bucket ((score-1)*len/max — speaks even at 0%). Bin ranges are
+Leaderboards view AND the browser; ONE Tab stop "lb", a UI/ColumnGrid — each stat a
+column named Cycles/Size/Activity, left/right switch stats at the same row (clamped),
+up/down walk a stat; user design 2026-09-28, replacing one stop per stat): per stat, the
+caption, percentile cutoffs + friends' scores merged best-first (each behind the game's
+own Steam options: EnableHistograms/EnableLeaderboards default ON,
+ShowTop/TenthPercentile default OFF — absent rows are usually that gate), then one row
+per NON-EMPTY histogram bin "lo to hi: N%" = the bin's SHARE OF ALL PLAYERS, one
+decimal, "under 0.1%" for tiny non-empty bins (user expectation, 2026-09-28 — the old
+percent-of-the-tallest-bin summed past 100). The data is NOT from a server: it is the
+shipped `Content\histograms.txt` (`F.<puzzle>.<stat>|max,count,count,...` = real
+player counts), which ScoreManager divides by the largest count at load — ratios
+survive, so bin / sum is exact. Single-value bins read as the bare number; empty bins
+skipped; ", your score" on the marker bucket ((score-1)*len/max — speaks even when
+empty). Bin ranges are
 the exact CEIL-based INVERSE of the bucket map (the floor form drifted low whenever
 max % len != 0). THE PANEL IS LAYOUT-PARAMETERIZED — Theme.smethod_5's call sites
 genuinely differ: completion = caption spoken + marker from the RUN's score

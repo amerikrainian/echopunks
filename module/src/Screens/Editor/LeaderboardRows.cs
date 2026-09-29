@@ -7,9 +7,9 @@ using Echopunks.UI.Graph;
 
 namespace Echopunks.Screens
 {
-    /// <summary>The histogram/leaderboard PANEL as browsable rows — ONE Tab stop per stat
-    /// (user rule, 2026-08-22: Tab jumps Cycles/Size/Activity like the three drawn panels;
-    /// arrows stay within a stat). The game draws the same panel (Theme.smethod_5) in two
+    /// <summary>The histogram/leaderboard PANELS as ONE browsable Tab stop, a grid of stat
+    /// columns (user design, 2026-09-28 — superseding the 2026-08-22 one-stop-per-stat rule:
+    /// left/right switch Cycles/Size/Activity, up/down walk a stat's rows). The game draws the same panel (Theme.smethod_5) in two
     /// places from the same per-stat GClass296 (scoreManager method_14) — the
     /// puzzle-completion screen's Leaderboards view and the solution browser's right half —
     /// and both build through here, each mirroring ITS drawn variant: the completion layout
@@ -19,30 +19,50 @@ namespace Echopunks.Screens
     /// GEnum216 1) — suppressed when the solution is over the size limit, exactly like the
     /// drawn arrow. Per stat: the caption (when the layout has one), the percentile cutoffs
     /// + friends' scores merged best-first (each behind its own Steam option, like the
-    /// drawing), then one row per NON-EMPTY histogram bin — "lo to hi: N%", percent of the
-    /// fullest bin (the server sends peak-normalized shape, no counts), the marker's bucket
-    /// tagged ", your score" (it speaks even at 0%). Empty bins are skipped: the gap reads
+    /// drawing), then one row per NON-EMPTY histogram bin — "lo to hi: N% of players", the
+    /// bin's share of ALL players (the data is shipped player counts the loader divides by
+    /// the largest; ratios survive, so bin / sum is exact), the marker's bucket tagged
+    /// ", your score" (it speaks even when empty). Empty bins are skipped: the gap reads
     /// from the ranges.</summary>
     internal static class LeaderboardRows
     {
-        /// <summary>One stat panel as one Tab stop ("lb.{si}"). <paramref name="marker"/> is
-        /// the score whose bucket reads ", your score" — pass the same value the screen's own
-        /// Theme call selects (empty = no marker, the drawn arrow's absence).</summary>
-        public static void BuildStat(GraphBuilder b, GClass296 g, int si, bool caption, Maybe<int> marker)
+        /// <summary>All stat panels as ONE Tab stop ("lb"), a ColumnGrid: each stat a column
+        /// named Cycles / Size / Activity, up/down through its rows, left/right to the same row
+        /// of the neighbouring stat (user design, 2026-09-28 — replaced one stop per stat).
+        /// <paramref name="marker"/> picks the score whose bucket reads ", your score" — the
+        /// same value the screen's own Theme call selects (empty = no marker, the drawn
+        /// arrow's absence). A stat with no rows at all is left out.</summary>
+        public static void Build(GraphBuilder b, IEnumerable<GClass296> stats, bool caption,
+            Func<GClass296, Maybe<int>> marker)
         {
-            b.BeginStop("lb." + si);
-            b.PushContext(StatName(g), positions: false);
-            if (caption)
+            var columns = new List<ColumnGrid.Column>();
+            int si = 0;
+            foreach (var g in stats)
             {
-                string cap = CurrentCaption(g);
-                if (cap != null) AddRow(b, "lb." + si + ".cur", cap);
+                string key = "lb." + si++;
+                var column = new ColumnGrid.Column
+                {
+                    Header = StatName(g),
+                    ContextId = ControlId.Structural(key + ".col"),
+                };
+                if (caption)
+                {
+                    string cap = CurrentCaption(g);
+                    if (cap != null) column.Cells.Add(Cell(key + ".cur", cap));
+                }
+                var entries = EntryRows(g);
+                for (int i = 0; i < entries.Count; i++)
+                    column.Cells.Add(Cell(key + ".e" + i, entries[i]));
+                AddBinRows(column, g, key, marker(g));
+                columns.Add(column);
             }
-            var entries = EntryRows(g);
-            for (int i = 0; i < entries.Count; i++)
-                AddRow(b, "lb." + si + ".e" + i, entries[i]);
-            AddBinRows(b, g, si, marker);
-            b.PopContext();
+            b.BeginStop("lb");
+            ColumnGrid.Edges edges;
+            ColumnGrid.Build(b, columns, out edges);
         }
+
+        private static ColumnGrid.Cell Cell(string id, string text)
+            => new ColumnGrid.Cell { Id = ControlId.Structural(id), Vtable = ColumnGrid.TextCell(text) };
 
         private static string StatName(GClass296 g)
         {
@@ -109,7 +129,7 @@ namespace Echopunks.Screens
             return rows;
         }
 
-        private static void AddBinRows(GraphBuilder b, GClass296 g, int si, Maybe<int> marker)
+        private static void AddBinRows(ColumnGrid.Column column, GClass296 g, string key, Maybe<int> marker)
         {
             try
             {
@@ -121,10 +141,18 @@ namespace Echopunks.Screens
                 int yours = -1;
                 if (marker.method_0()) // the game's marker-bucket formula
                     yours = Math.Max(0, Math.Min(len - 1, (marker.method_2() - 1) * len / max));
+                // The bins are PLAYER COUNTS (Content\histograms.txt) that the loader divides
+                // by the largest — ratios survive, so each bin's share of all players is
+                // exact: bin / sum (user expectation, 2026-09-28: "how many players scored
+                // here", adding up to 100 — the peak-relative bar height did not).
+                double sum = 0;
+                foreach (var f in hist.float_0) if (f > 0) sum += f;
+                if (sum <= 0) return;
                 for (int j = 0; j < len; j++)
                 {
-                    int pct = (int)Math.Round(hist.float_0[j] * 100f);
-                    if (pct <= 0 && j != yours) continue;
+                    float count = hist.float_0[j];
+                    if (count <= 0 && j != yours) continue; // truly empty: the gap reads from the ranges
+                    string pct = SharePercent(Math.Max(0, count) / sum * 100.0);
                     // The bucket→score range must be the exact INVERSE of the game's
                     // score→bucket map ((s-1)*len/max): ceil-based bounds. The floor form
                     // drifted a value low whenever max doesn't divide by len — an activity
@@ -134,10 +162,19 @@ namespace Echopunks.Screens
                     string text = lo == hi // a single-value bin reads as just the number
                         ? Loc.T(j == yours ? "lb.bin.one.yours" : "lb.bin.one", new { lo, pct })
                         : Loc.T(j == yours ? "lb.bin.yours" : "lb.bin", new { lo, hi, pct });
-                    AddRow(b, "lb." + si + ".b" + j, text);
+                    column.Cells.Add(Cell(key + ".b" + j, text));
                 }
             }
             catch { }
+        }
+
+        /// <summary>One decimal, trailing ".0" dropped; a non-empty bin too small to show
+        /// at that precision says so rather than reading as zero players.</summary>
+        private static string SharePercent(double share)
+        {
+            if (share <= 0) return "0";
+            if (share < 0.05) return Loc.T("lb.pct.under", new { pct = "0.1" });
+            return share.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public static void AddRow(GraphBuilder b, string id, string text)

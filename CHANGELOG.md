@@ -2,8 +2,9 @@
 
 ## V0.1.4
 
-- Goal popups that deal with a table of values render them as an actual table rather than an n-tuple of values
-- The TRASH WORLD NEWS digital versions now open as HTML pages in your browser, figures included
+- Goal popups that deal with a table of values render them as an actual table rather than an n-tuple of values.
+- The TRASH WORLD NEWS digital versions now open as HTML pages in your browser.
+- Aligned the histograms as one stop
 
 ## V0.1.3
 

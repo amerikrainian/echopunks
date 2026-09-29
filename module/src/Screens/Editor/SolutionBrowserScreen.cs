@@ -176,10 +176,8 @@ namespace Echopunks.Screens
                     // size limit exactly like the drawn arrow (the panel itself still
                     // shows).
                     bool eligible = SelectionEligible(s);
-                    int si = 0;
-                    foreach (var kv in s.dictionary_0)
-                        LeaderboardRows.BuildStat(b, kv.Value, si++, caption: false,
-                            eligible ? kv.Value.maybe_2 : (Maybe<int>)GStruct10.gstruct10_0);
+                    LeaderboardRows.Build(b, s.dictionary_0.Values, caption: false,
+                        g => eligible ? g.maybe_2 : (Maybe<int>)GStruct10.gstruct10_0);
                 }
             }
         }

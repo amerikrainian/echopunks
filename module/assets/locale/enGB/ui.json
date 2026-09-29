@@ -190,6 +190,7 @@
   "lb.bin.yours": "{lo} to {hi}: {pct}%, your score.",
   "lb.bin.one": "{lo}: {pct}%.",
   "lb.bin.one.yours": "{lo}: {pct}%, your score.",
+  "lb.pct.under": "under {pct}",
   "lb.ineligible": "The size of your solution ({size}) exceeds the size limit for this task ({limit}). Your scores are not eligible for histograms or leaderboards.",
   "editor.registers": "{host} registers",
   "editor.host.locked": "Locked host",

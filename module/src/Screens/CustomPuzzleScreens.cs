@@ -310,9 +310,7 @@ namespace Echopunks.Screens
             // dictionary_0 (scoreManager method_14) on every selection change. Same Theme
             // layout as the solution browser: no caption, marker = the panel's own maybe_2.
             if (s.dictionary_0 == null) return;
-            int si = 0;
-            foreach (var kv in s.dictionary_0)
-                LeaderboardRows.BuildStat(b, kv.Value, si++, caption: false, kv.Value.maybe_2);
+            LeaderboardRows.Build(b, s.dictionary_0.Values, caption: false, g => g.maybe_2);
         }
 
         private static void DetailRow(GraphBuilder b, string id, Func<string> text)
