@@ -454,11 +454,12 @@ Module (each reload starts this half cold — statics are per-load):
   digits keep working in parallel. Covers the fullscreen story mode. Plus
   `TrashWorldNewsScreen` — the zine reader (deob GClass214, obfuscated live; ghast-1/2
   cutscenes end by pushing it): issue tabs (unlock flags mirrored), the per-tab buttons,
-  close, and the art-only printing instructions. THE ZINES SHIP AS TEXT DOCUMENTS
-  (repo `docs/game/twn-1.md`, `twn-2.md`, `twn-epilogue.md` → `<game>\Echopunks\docs\`,
-  deployed by the module build and staged into the release zip): each tab's DIGITAL
-  VERSION button shell-opens the matching document (ids match the files' `id:` headers;
-  a missing document falls back to the game's PDF); the PRINTABLE buttons still open
+  close, and the art-only printing instructions. THE ZINES SHIP AS HTML DOCUMENTS
+  (repo `docs/game/twn-1.html`, `twn-2.html`, `twn-epilogue.html` + their figures in
+  `docs/game/images/` → `<game>\Echopunks\docs\` and `docs\images\`, deployed by the
+  module build and staged into the release zip; Markdown until 2026-09-28): each tab's
+  DIGITAL VERSION button shell-opens the matching page in the default browser (ids are the
+  file names; a missing document falls back to the game's PDF); the PRINTABLE buttons still open
   the game's PDFs, byte-identical to the click (user rule, 2026-09-24).
   MOD NARRATION IN A GAME SCRIPT (`Screens/CutsceneNotes.cs`, user decision 2026-09-26 — the
   first mod-authored prose inside the game): 14 Moss lines (ui.json cutscene.notes.ghast1.*)

@@ -89,10 +89,11 @@ try {
     # Packaging pattern adapted from SayTheSpire2:
     # https://github.com/bradjrenshaw/say-the-spire2
     Copy-Item -Path $localeDir -Destination (Join-Path $modDir "locale") -Recurse
-    # The zine documents (docs\game\*.md): TRASH WORLD NEWS's Digital Version buttons open these
-    # instead of the game's text-locked PDFs (module/src/Screens/TrashWorldNewsScreen.cs).
-    New-Item -ItemType Directory -Force (Join-Path $modDir "docs") | Out-Null
-    Copy-Item -Path (Join-Path $docsDir "*.md") -Destination (Join-Path $modDir "docs")
+    # The zine documents (docs\game\*.html + images\): TRASH WORLD NEWS's Digital Version buttons
+    # open these instead of the game's text-locked PDFs (module/src/Screens/TrashWorldNewsScreen.cs).
+    New-Item -ItemType Directory -Force (Join-Path $modDir "docs\images") | Out-Null
+    Copy-Item -Path (Join-Path $docsDir "*.html") -Destination (Join-Path $modDir "docs")
+    Copy-Item -Path (Join-Path $docsDir "images\*") -Destination (Join-Path $modDir "docs\images")
 
     if (Test-Path $zipPath) {
         Remove-Item -LiteralPath $zipPath -Force

@@ -14,7 +14,7 @@ namespace Echopunks.Screens
     /// materials" book. The zines themselves never render in-game — the game's buttons shell-open
     /// the shipped PDFs via method_39 (the PDFs are password-protected against text extraction, so
     /// a screen reader gets little out of them). The mod ships each zine as a TEXT DOCUMENT
-    /// (repo docs/game/*.md → &lt;game&gt;\Echopunks\docs\), and the per-tab DIGITAL VERSION button
+    /// (repo docs/game/*.html + images/ → &lt;game&gt;\Echopunks\docs\), and the per-tab DIGITAL VERSION button
     /// opens that document in the user's own editor instead; the PRINTABLE buttons still open the
     /// game's PDFs, byte-identical to the click. Modeled fully: issue tabs (select-on-arrow;
     /// locked ones present as unavailable, unlocking with the same story flags the game checks),
@@ -74,13 +74,13 @@ namespace Echopunks.Screens
             catch (Exception ex) { Log.Error("[news] pdf open failed", ex); }
         }
 
-        // The mod's zine documents ship next to the locale tables: <game>\Echopunks\docs\<id>.md,
-        // rooted off the HOST dll (the module is byte-loaded and has no disk location — the same
-        // anchor LocalizationManager uses). Per-tab ids match the doc files' own `id:` headers.
+        // The mod's zine documents ship next to the locale tables: <game>\Echopunks\docs\<id>.html
+        // (figures in docs\images\), rooted off the HOST dll (the module is byte-loaded and has no
+        // disk location — the same anchor LocalizationManager uses). Ids are the file names.
         private static string DocPath(string id) =>
-            Path.Combine(Path.GetDirectoryName(typeof(Log).Assembly.Location), "Echopunks", "docs", id + ".md");
+            Path.Combine(Path.GetDirectoryName(typeof(Log).Assembly.Location), "Echopunks", "docs", id + ".html");
 
-        // Shell-open the text document (the OS's .md association — a plain editor at worst).
+        // Shell-open the HTML document (the default browser).
         // A missing document (a hand-copied install without the docs folder) falls back to the
         // game's PDF so the button never goes dead.
         private static void OpenDoc(string id, string pdfFallback)

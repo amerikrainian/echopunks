@@ -89,13 +89,15 @@
     </ItemGroup>
     <Copy SourceFiles="@(LocaleFiles)"
           DestinationFiles="@(LocaleFiles->'$(GameDir)\Echopunks\locale\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <!-- The zine documents (repo docs/game/*.md): TRASH WORLD NEWS's Digital Version buttons
-         shell-open these from <game>\Echopunks\docs\ instead of the game's text-locked PDFs
-         (Screens/TrashWorldNewsScreen.cs). -->
+    <!-- The zine documents (repo docs/game/*.html + images/): TRASH WORLD NEWS's Digital Version
+         buttons shell-open these from <game>\Echopunks\docs\ instead of the game's text-locked
+         PDFs (Screens/TrashWorldNewsScreen.cs). -->
     <ItemGroup>
-      <DocFiles Include="$(MSBuildProjectDirectory)\..\docs\game\*.md" />
+      <DocFiles Include="$(MSBuildProjectDirectory)\..\docs\game\*.html" />
+      <DocImages Include="$(MSBuildProjectDirectory)\..\docs\game\images\*" />
     </ItemGroup>
     <Copy SourceFiles="@(DocFiles)" DestinationFolder="$(GameDir)\Echopunks\docs" />
+    <Copy SourceFiles="@(DocImages)" DestinationFolder="$(GameDir)\Echopunks\docs\images" />
     <Message Importance="high" Text="Echopunks.Module + locale + docs deployed to $(GameDir)" />
   </Target>
 
