@@ -9,13 +9,61 @@ namespace Echopunks.UI
         public string Text;
         public float X;
         public float Y;
+        /// <summary>Set on a whole TABLE recorded structurally (the game's shared table draw):
+        /// the cell stands at the header row's left edge and reads as one table line.</summary>
+        public PanelTable Table;
+        /// <summary>Horizontal extent right of X (a table's column span) — block splitting
+        /// measures gaps from the right edge. 0 for text.</summary>
+        public float Width;
 
         public PanelCell(string text, float x, float y)
         {
             Text = text;
             X = x;
             Y = y;
+            Table = null;
+            Width = 0f;
         }
+
+        public PanelCell(PanelTable table, float x, float y, float width)
+        {
+            Text = null;
+            X = x;
+            Y = y;
+            Table = table;
+            Width = width;
+        }
+    }
+
+    /// <summary>One drawn table column: its header text (may be empty — the DISC log's merged
+    /// headers) and its values top-down as drawn (an empty string is a drawn-but-empty cell).</summary>
+    internal sealed class PanelColumn
+    {
+        public string Header;
+        public List<string> Values = new List<string>();
+    }
+
+    internal sealed class PanelTable
+    {
+        public List<PanelColumn> Columns = new List<PanelColumn>();
+
+        /// <summary>Content identity, for collapsing a table drawn twice between two ticks.</summary>
+        public string Signature()
+        {
+            var parts = new List<string>();
+            foreach (var c in Columns) parts.Add((c.Header ?? "") + "\u0001" + string.Join("\u0002", c.Values));
+            return string.Join("\u0003", parts);
+        }
+    }
+
+    /// <summary>One reading-order line of a panel: plain text, or a whole table.</summary>
+    internal sealed class PanelLine
+    {
+        public string Text;
+        public PanelTable Table;
+
+        public static PanelLine Of(string text) => new PanelLine { Text = text };
+        public static PanelLine Of(PanelTable table) => new PanelLine { Table = table };
     }
 
     /// <summary>
@@ -28,7 +76,9 @@ namespace Echopunks.UI
     /// ties left-to-right; within a block, cells cluster into rows by y descending, cells within a
     /// row read left to right joined with ", ", and a multi-line string becomes one row per line.
     /// Exact repeats collapse (a panel drawn twice between two of our ticks must not double its
-    /// rows).
+    /// rows). TABLES arrive whole (PanelCapture records the game's shared table draw
+    /// structurally; its cells never reach the text path): one cell at the header row that
+    /// becomes its own table line, breaking any text run it shares a row with.
     /// </summary>
     internal static class PanelText
     {
@@ -41,18 +91,25 @@ namespace Echopunks.UI
         /// step at most ~206 apart, so any one table stays whole.</summary>
         private const float BlockGap = 600f;
 
-        public static List<string> Assemble(IEnumerable<PanelCell> cells)
+        public static List<PanelLine> Assemble(IEnumerable<PanelCell> cells)
         {
             var kept = new List<PanelCell>();
             var seen = new HashSet<string>();
             foreach (var cell in cells)
             {
-                if (string.IsNullOrWhiteSpace(cell.Text)) continue;
-                if (!seen.Add(cell.Text + "\n" + cell.X + "\n" + cell.Y)) continue;
+                string content;
+                if (cell.Table != null)
+                {
+                    if (cell.Table.Columns.Count == 0) continue;
+                    content = "\u0001table\u0001" + cell.Table.Signature();
+                }
+                else if (string.IsNullOrWhiteSpace(cell.Text)) continue;
+                else content = cell.Text;
+                if (!seen.Add(content + "\n" + cell.X + "\n" + cell.Y)) continue;
                 kept.Add(cell);
             }
 
-            var lines = new List<string>();
+            var lines = new List<PanelLine>();
             foreach (var block in SplitBlocks(kept)) AssembleBlock(block, lines);
             return lines;
         }
@@ -64,14 +121,16 @@ namespace Echopunks.UI
             var byX = new List<PanelCell>(cells);
             byX.Sort((a, b) => a.X.CompareTo(b.X));
             var current = new List<PanelCell> { byX[0] };
+            float right = byX[0].X + byX[0].Width;
             for (int i = 1; i < byX.Count; i++)
             {
-                if (byX[i].X - byX[i - 1].X > BlockGap)
+                if (byX[i].X - right > BlockGap)
                 {
                     blocks.Add(current);
                     current = new List<PanelCell>();
                 }
                 current.Add(byX[i]);
+                right = System.Math.Max(right, byX[i].X + byX[i].Width);
             }
             blocks.Add(current);
             blocks.Sort((a, b) =>
@@ -96,7 +155,7 @@ namespace Echopunks.UI
             return m;
         }
 
-        private static void AssembleBlock(List<PanelCell> kept, List<string> lines)
+        private static void AssembleBlock(List<PanelCell> kept, List<PanelLine> lines)
         {
             kept.Sort((a, b) => a.Y != b.Y ? b.Y.CompareTo(a.Y) : a.X.CompareTo(b.X));
             for (int i = 0; i < kept.Count;)
@@ -105,15 +164,32 @@ namespace Echopunks.UI
                 while (end < kept.Count && kept[end - 1].Y - kept[end].Y <= RowTolerance) end++;
                 var row = kept.GetRange(i, end - i);
                 row.Sort((a, b) => a.X.CompareTo(b.X));
+                // Text runs join left to right; a table ends the run and stands alone.
                 var texts = new List<string>();
-                foreach (var cell in row) texts.Add(cell.Text.Trim());
-                foreach (var line in string.Join(", ", texts).Split('\n'))
+                foreach (var cell in row)
                 {
-                    string trimmed = line.Trim();
-                    if (trimmed.Length > 0) lines.Add(trimmed);
+                    if (cell.Table == null)
+                    {
+                        texts.Add(cell.Text.Trim());
+                        continue;
+                    }
+                    FlushText(texts, lines);
+                    lines.Add(PanelLine.Of(cell.Table));
                 }
+                FlushText(texts, lines);
                 i = end;
             }
+        }
+
+        private static void FlushText(List<string> texts, List<PanelLine> lines)
+        {
+            if (texts.Count == 0) return;
+            foreach (var line in string.Join(", ", texts).Split('\n'))
+            {
+                string trimmed = line.Trim();
+                if (trimmed.Length > 0) lines.Add(PanelLine.Of(trimmed));
+            }
+            texts.Clear();
         }
     }
 }

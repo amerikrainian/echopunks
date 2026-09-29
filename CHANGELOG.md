@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.4
+
+- Goal popups that deal with a table of values render them as an actual table rather than an n-tuple of values
+
 ## V0.1.3
 
 - Moss recalls how the editor is laid out during the Ghast visit that hands over the zine.

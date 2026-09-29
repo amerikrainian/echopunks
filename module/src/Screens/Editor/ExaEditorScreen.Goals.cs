@@ -275,11 +275,21 @@ namespace Echopunks.Screens
             var rows = GoalRowTexts(Editor);
             if (rows.Count == 0) return false;
             // Bare rows, no context, no position counts — the file-popup precedent (user rule).
+            // Tables are raw-wired grids, so every vertical seam between rows is wired here
+            // explicitly: each row's bottom edge goes Down to the next row's entry, the next
+            // row's top edge goes Up to this row's exit.
             b.BeginStop("goalpop");
+            var edges = new PopupEdges[rows.Count];
             for (int i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
+                if (row.Table != null)
+                {
+                    edges[i] = AddGoalTable(b, row.Table, "ed.gpop." + i);
+                    continue;
+                }
                 var id = ControlId.Structural("ed.gpop." + i);
+                edges[i] = PopupEdges.Single(id);
                 b.AddItem(id, new NodeVtable
                 {
                     ControlType = ControlTypes.Text,
@@ -296,8 +306,84 @@ namespace Echopunks.Screens
                     OnSecondary = CloseGoalPopup,
                 });
             }
+            for (int i = 0; i + 1 < rows.Count; i++)
+            {
+                foreach (var from in edges[i].Bottom) b.Connect(from, GraphDir.Down, edges[i + 1].EnterTop);
+                foreach (var from in edges[i + 1].Top) b.Connect(from, GraphDir.Up, edges[i].EnterBottom);
+            }
             return true;
         }
+
+        /// <summary>A popup row's vertical seams: the nodes whose Up/Down leave it, and where
+        /// arriving from above/below lands.</summary>
+        private struct PopupEdges
+        {
+            public ControlId[] Top, Bottom;
+            public ControlId EnterTop, EnterBottom;
+
+            public static PopupEdges Single(ControlId id)
+                => new PopupEdges { Top = new[] { id }, Bottom = new[] { id }, EnterTop = id, EnterBottom = id };
+        }
+
+        // ---- a captured panel TABLE as a grid (user design, 2026-09-28): each column is a
+        // container labeled by its header (the path-diff announcer speaks it whenever focus
+        // crosses into the column), holding its values top-down; up/down walk a column,
+        // left/right cross to the same row of the neighbouring column (clamped when it is
+        // shorter). Cells speak bare like every popup row; a drawn-but-empty cell (the HDI-10
+        // log pads its IN column beside multi-value outputs) and an empty column say "N/A".
+        // A header-less column (the DISC log's merged headers) is named by its ordinal. ----
+
+        private PopupEdges AddGoalTable(GraphBuilder b, PanelTable table, string key)
+        {
+            int cols = table.Columns.Count;
+            var cells = new ControlId[cols][];
+            for (int c = 0; c < cols; c++)
+            {
+                var column = table.Columns[c];
+                string header = GameText.Speech(column.Header);
+                if (string.IsNullOrWhiteSpace(header))
+                    header = Loc.T("editor.goal.table.column", new { n = c + 1 });
+                b.PushContext(header, positions: false, id: ControlId.Structural(key + ".col" + c));
+                int count = Math.Max(1, column.Values.Count);
+                cells[c] = new ControlId[count];
+                for (int r = 0; r < count; r++)
+                {
+                    string text = r < column.Values.Count ? TableCellSpeech(column.Values[r]) : Loc.T("text.na");
+                    var id = ControlId.Structural(key + "." + c + "." + r);
+                    cells[c][r] = id;
+                    b.AddNode(id, new NodeVtable
+                    {
+                        ControlType = ControlTypes.Text,
+                        SpeaksOwnPosition = true,
+                        Announcements = new[] { new NodeAnnouncement(() => text, kind: AnnouncementKinds.Label) },
+                        OnActivate = CloseGoalPopup,
+                        OnSecondary = CloseGoalPopup,
+                    });
+                }
+                b.PopContext();
+            }
+            var top = new ControlId[cols];
+            var bottom = new ControlId[cols];
+            for (int c = 0; c < cols; c++)
+            {
+                var col = cells[c];
+                top[c] = col[0];
+                bottom[c] = col[col.Length - 1];
+                for (int r = 0; r < col.Length; r++)
+                {
+                    if (r > 0) b.Connect(col[r], GraphDir.Up, col[r - 1]);
+                    if (r + 1 < col.Length) b.Connect(col[r], GraphDir.Down, col[r + 1]);
+                    if (c > 0) b.Connect(col[r], GraphDir.Left, cells[c - 1][Math.Min(r, cells[c - 1].Length - 1)]);
+                    if (c + 1 < cols) b.Connect(col[r], GraphDir.Right, cells[c + 1][Math.Min(r, cells[c + 1].Length - 1)]);
+                }
+            }
+            return new PopupEdges { Top = top, Bottom = bottom, EnterTop = top[0], EnterBottom = bottom[0] };
+        }
+
+        /// <summary>A table cell's words: empty = "N/A" (user wording for table cells — the
+        /// comma-join rows say "blank"), a redaction bar its name, anything else raw.</summary>
+        private static string TableCellSpeech(string value)
+            => string.IsNullOrWhiteSpace(value) ? Loc.T("text.na") : ValueSpeech(value);
 
         /// <summary>One popup row: the text, and for goal-FILE rows the (host, required-file)
         /// indexes the values popup re-resolves by — the sim rebuilds every frame while
@@ -307,6 +393,7 @@ namespace Echopunks.Screens
             public string Text;
             public int Host;
             public int Required; // -1 on every non-file row
+            public PanelTable Table; // a captured panel table (Text unused) — built as a grid
 
             public static GoalRow Plain(string text)
                 => new GoalRow { Text = text, Host = -1, Required = -1 };
@@ -410,7 +497,9 @@ namespace Echopunks.Screens
                 if (logic is SpecialPuzzleLogics.BonusNth && Patches.PanelCapture.Lines.Count > 0)
                     rows.Add(GoalRow.Plain(ServingBoardCaption));
                 foreach (var line in Patches.PanelCapture.Lines)
-                    rows.Add(GoalRow.Plain(GameText.Speech(line)));
+                    rows.Add(line.Table != null
+                        ? new GoalRow { Table = line.Table, Host = -1, Required = -1 }
+                        : GoalRow.Plain(GameText.Speech(line.Text)));
                 string art;
                 var gmeta = Meta(e);
                 if (gmeta != null && GoalPanelLettering.TryGetValue(gmeta.string_0, out art)

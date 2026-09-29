@@ -30,8 +30,9 @@ namespace Echopunks.Patches
         /// <summary>While true, EditorScreen.method_7() (the F1 show-goal flag) reads true.</summary>
         public static bool ForceGoal { get; private set; }
 
-        /// <summary>Last published frame's panel text, in reading order.</summary>
-        public static List<string> Lines { get; private set; } = new List<string>();
+        /// <summary>Last published frame's panel text, in reading order — text lines and whole
+        /// tables.</summary>
+        public static List<PanelLine> Lines { get; private set; } = new List<PanelLine>();
 
         public static void SetArmed(bool armed, bool forceGoal)
         {
@@ -40,7 +41,7 @@ namespace Echopunks.Patches
             if (!armed && (Buffer.Count > 0 || Lines.Count > 0))
             {
                 Buffer.Clear();
-                Lines = new List<string>();
+                Lines = new List<PanelLine>();
             }
         }
 
@@ -102,6 +103,21 @@ namespace Echopunks.Patches
                 harmony.Patch(Expr.MethodOf(() => GClass230.smethod_36(null, default(Vector2), null,
                         default(Color), default(GEnum165), 0f, 0f, 0f, 0f, 0, default(Color), 0)),
                     postfix: text);
+                // Every I/O LOG and custom-puzzle table goes through ONE private static draw,
+                // SpecialPuzzleLogics.smethod_2(Vector2 origin, TableColumn[] columns) — so the
+                // tables are recorded STRUCTURALLY (header + values per column) and the text
+                // statics stay silent inside it; position heuristics can't tell a blank cell
+                // from a missing one.
+                try
+                {
+                    var tableDraw = Deobf.Method(typeof(SpecialPuzzleLogics), "smethod_2");
+                    if (tableDraw != null && BindTableColumn(tableDraw))
+                        harmony.Patch(tableDraw,
+                            prefix: new HarmonyMethod(typeof(PanelCapture), nameof(TablePrefix)),
+                            finalizer: new HarmonyMethod(typeof(PanelCapture), nameof(TableFinalizer)));
+                    else Log.Error("[patch] panel capture: table draw not bound; tables read as text rows");
+                }
+                catch (Exception ex) { Log.Error("[patch] panel capture: table draw patch failed", ex); }
                 // The CREDITS roll (deob GClass252, pushed when the final story epilogue ends):
                 // a timed, non-interactive screen whose every line is a text-static draw from
                 // its per-frame imethod_1 — the same tap reads it, no strings duplicated.
@@ -130,6 +146,61 @@ namespace Echopunks.Patches
         {
             _credits = false;
             CreditsFrame = new List<string>(CreditsBuffer);
+            return __exception;
+        }
+
+        // ---- the shared table draw (private nested SpecialPuzzleLogics.TableColumn: header
+        // LocString, ExaValue[] values, float x offset; name-preserved type, fields via Deobf) ----
+
+        private static FieldInfo _colHeader, _colValues, _colX;
+        private static int _tableDepth;
+
+        private static bool BindTableColumn(MethodInfo tableDraw)
+        {
+            var ps = tableDraw.GetParameters();
+            if (ps.Length != 2 || !ps[1].ParameterType.IsArray) return false;
+            var col = ps[1].ParameterType.GetElementType();
+            _colHeader = Deobf.Field(col, "locString_0");
+            _colValues = Deobf.Field(col, "exaValue_0");
+            _colX = Deobf.Field(col, "float_0");
+            return _colHeader != null && _colValues != null && _colX != null;
+        }
+
+        private static void TablePrefix(object[] __args)
+        {
+            _tableDepth++;
+            if (!_record) return;
+            try
+            {
+                var origin = (Vector2)__args[0];
+                var columns = __args[1] as Array;
+                if (columns == null || Buffer.Count >= BufferCap) return;
+                var table = new PanelTable();
+                float minX = float.MaxValue, maxX = float.MinValue;
+                foreach (var c in columns)
+                {
+                    if (c == null) continue;
+                    var column = new PanelColumn { Header = _colHeader.GetValue(c)?.ToString() ?? "" };
+                    var values = _colValues.GetValue(c) as ExaValue[];
+                    // method_2(true) = the raw value: the drawn form (false) wraps strings in
+                    // the underline markup — an empty cell draws as markup with no glyphs.
+                    if (values != null)
+                        foreach (var v in values) column.Values.Add(v.method_2(true) ?? "");
+                    table.Columns.Add(column);
+                    float x = (float)_colX.GetValue(c);
+                    minX = Math.Min(minX, x);
+                    maxX = Math.Max(maxX, x);
+                }
+                if (table.Columns.Count == 0) return;
+                // Anchored where the draw letters the headers (origin + (x, -8)).
+                Buffer.Add(new PanelCell(table, origin.float_0 + minX, origin.float_1 - 8f, maxX - minX));
+            }
+            catch { }
+        }
+
+        private static Exception TableFinalizer(Exception __exception)
+        {
+            if (--_tableDepth < 0) _tableDepth = 0;
             return __exception;
         }
 
@@ -186,7 +257,7 @@ namespace Echopunks.Patches
                 catch { }
                 return;
             }
-            if (!_record) return;
+            if (!_record || _tableDepth > 0) return; // table cells arrive whole via TablePrefix
             try
             {
                 if (!string.IsNullOrWhiteSpace(__0) && Buffer.Count < BufferCap)

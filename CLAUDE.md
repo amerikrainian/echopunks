@@ -847,6 +847,15 @@ restored to the opener):
   y (y-up, CONSECUTIVE-cell chaining at tolerance 15 — PB020's strip is one glyph per
   call along an isometric diagonal, 14.17 y-step, and must stay ONE spoken row; table
   rows step 41.5 and never chain), cells left-to-right.
+- TABLES (2026-09-28): every panel table in the game (all I/O logs, the DISC log, custom-
+  puzzle tables) is drawn by ONE private static, SpecialPuzzleLogics.smethod_2(Vector2,
+  TableColumn[]) — PanelCapture records it STRUCTURALLY (per column: header LocString +
+  ExaValue[] via method_2(true)) and mutes the text statics inside it; PanelText places the
+  table as one line at its header row. The popup builds it as a raw-wired GRID: each column a
+  context labeled by its header (explicit PushContext id — equal headers must not share one),
+  up/down within a column, left/right to the same row clamped; empty cells and empty columns
+  say "N/A" (user wording); header-less columns "Column n". Every vertical seam between popup
+  rows is wired explicitly (PopupEdges).
 
 **File speaking rules** (Readouts.cs helpers, used by every surface):
 - IDENTITY: file ids repeat across hosts — rows, readouts and the popup are all

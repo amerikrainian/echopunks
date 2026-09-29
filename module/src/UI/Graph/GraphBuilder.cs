@@ -111,8 +111,11 @@ namespace Echopunks.UI.Graph
 
         /// <summary>Push one NON-FOCUSABLE level of presentation hierarchy ("Difficulty settings",
         /// "list") onto nodes added from here â€” pure structure: never navigable, announced when focus
-        /// enters from outside. Close with <see cref="PopContext"/>.</summary>
-        public GraphBuilder PushContext(string label, string role = null, bool positions = true)
+        /// enters from outside. Close with <see cref="PopContext"/>. <paramref name="id"/> overrides
+        /// the label-pathed identity where sibling contexts can share a label (table columns with
+        /// equal headers) — the announcer diffs parent chains by id, so equal ids never re-announce.</summary>
+        public GraphBuilder PushContext(string label, string role = null, bool positions = true,
+            ControlId id = null)
         {
             var parent = CurrentParent;
             var anns = new List<NodeAnnouncement> { NodeAnnouncement.Static(label) };
@@ -120,7 +123,7 @@ namespace Echopunks.UI.Graph
             var node = new GraphNode
             {
                 // Stable synthetic identity (label-pathed) so cross-render chain diffs match up.
-                Id = ControlId.Structural("ctx:" + (parent?.Id.StructuralKey ?? "") + "/" + label),
+                Id = id ?? ControlId.Structural("ctx:" + (parent?.Id.StructuralKey ?? "") + "/" + label),
                 Vtable = new NodeVtable { Announcements = anns },
                 Parent = parent,
                 Focusable = false,
