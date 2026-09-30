@@ -40,14 +40,20 @@ namespace Echopunks.UI
         }
 
         /// <summary>Declares the grid into the current stop. Columns without cells are skipped;
-        /// returns false (nothing declared) when none has any.</summary>
-        public static bool Build(GraphBuilder b, IList<Column> columns, out Edges edges)
+        /// returns false (nothing declared) when none has any. <paramref name="tableRole"/>, when
+        /// given, wraps the columns in one label-less container carrying that role word: the
+        /// path-diff announcer speaks it once on the way in and never between its columns, so a
+        /// landing reads "table, {header}, {cell}" and says left/right is there to take.</summary>
+        public static bool Build(GraphBuilder b, IList<Column> columns, out Edges edges,
+            string tableRole = null, ControlId tableId = null)
         {
             edges = default(Edges);
             var cols = new List<Column>();
             foreach (var c in columns) if (c != null && c.Cells.Count > 0) cols.Add(c);
             if (cols.Count == 0) return false;
 
+            bool table = !string.IsNullOrEmpty(tableRole);
+            if (table) b.PushContext(null, tableRole, positions: false, id: tableId);
             var ids = new ControlId[cols.Count][];
             for (int c = 0; c < cols.Count; c++)
             {
@@ -61,6 +67,7 @@ namespace Echopunks.UI
                 }
                 b.PopContext();
             }
+            if (table) b.PopContext();
 
             var top = new ControlId[cols.Count];
             var bottom = new ControlId[cols.Count];

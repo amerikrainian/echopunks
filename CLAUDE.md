@@ -896,7 +896,9 @@ restored to the opener):
   context labeled by its header (explicit PushContext id — equal headers must not share one),
   up/down within a column, left/right to the same row clamped; empty cells and empty columns
   say "N/A" (user wording); header-less columns "Column n". Every vertical seam between popup
-  rows is wired explicitly (ColumnGrid.Edges). The grid itself is the shared UI/ColumnGrid
+  rows is wired explicitly (ColumnGrid.Edges). The columns sit in one label-less TABLE
+  container (ColumnGrid.Build's tableRole, role.table — user rule 2026-09-30): "table" speaks
+  only on entering from outside, never between columns, so the landing says Right has more. The grid itself is the shared UI/ColumnGrid
   (also the histogram panels).
 
 **File speaking rules** (Readouts.cs helpers, used by every surface):
@@ -1028,7 +1030,8 @@ the solutions stop so a mouse click never yanks focus out of the action rows).
 **Leaderboard panels** (shared LeaderboardRows.cs — feeds PuzzleCompleteScreen's
 Leaderboards view AND the browser; ONE Tab stop "lb", a UI/ColumnGrid — each stat a
 column named Cycles/Size/Activity, left/right switch stats at the same row (clamped),
-up/down walk a stat; user design 2026-09-28, replacing one stop per stat): per stat, the
+up/down walk a stat; user design 2026-09-28, replacing one stop per stat; wrapped as a
+"table" container like the goal-popup tables, 2026-09-30): per stat, the
 caption, percentile cutoffs + friends' scores merged best-first (each behind the game's
 own Steam options: EnableHistograms/EnableLeaderboards default ON,
 ShowTop/TenthPercentile default OFF — absent rows are usually that gate), then one row

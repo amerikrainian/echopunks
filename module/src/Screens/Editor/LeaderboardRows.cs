@@ -58,7 +58,8 @@ namespace Echopunks.Screens
             }
             b.BeginStop("lb");
             ColumnGrid.Edges edges;
-            ColumnGrid.Build(b, columns, out edges);
+            // A TABLE like the goal popup's panel tables: "table" on the way in, never between stats.
+            ColumnGrid.Build(b, columns, out edges, Loc.T("role.table"), ControlId.Structural("lb.table"));
         }
 
         private static ColumnGrid.Cell Cell(string id, string text)

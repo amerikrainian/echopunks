@@ -347,7 +347,9 @@ namespace Echopunks.Screens
                 columns.Add(column);
             }
             ColumnGrid.Edges edges;
-            ColumnGrid.Build(b, columns, out edges); // every column has a cell: always declares
+            // Wrapped as a TABLE (user rule, 2026-09-30): landing from a popup row said only
+            // "IN (CNS), -42", no sign that Right leads to more columns.
+            ColumnGrid.Build(b, columns, out edges, Loc.T("role.table"), ControlId.Structural(key + ".table")); // every column has a cell: always declares
             return edges;
         }
 

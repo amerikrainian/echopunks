@@ -4,6 +4,7 @@
 
 - You can now reorder exas with shift+arrows while in the windows stop.
 - Advancing through a cutscene no longer requires you to skip the animation first.
+- Made it more clear that a table in goal popup is a table you can arrow through.
 
 ## V0.1.6
 
