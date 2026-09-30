@@ -912,11 +912,14 @@ while focused, the sighted player's ticking plate); write-only registers speak
 "write-only" with no value, like the plain drawn plate.
 
 **Sign grid** (SFCTA highway sign — the first sprite-content model read): host-scoped
-"{host} sign" stop; 3x9 cells speak BARE (character/"blank"/dot-question-exclamation
-names — a bare "." is TTS silence), Live, re-resolved per announce; up/down preserves
-the column (grid rows MUST share one StartRow key — GraphBuilder.VerticalTarget
-column-navigates only between same-key rows). The goal popup speaks the target message
-as geometry + per-row spans (0-based, the same numbers a #DATA write addresses). The
+"{host} sign" stop; 3x9 cells speak "{col}, {row}, {char}" — 0-based, the numbers a
+#DATA write addresses (user rule, 2026-09-30); char = the glyph or "blank"/dot-question-
+exclamation names (a bare "." is TTS silence); coordinates are a static Label part, the
+character a Live Value part (a write re-speaks only the character), re-resolved per
+announce; up/down preserves the column (grid rows MUST share one StartRow key —
+GraphBuilder.VerticalTarget column-navigates only between same-key rows). The goal popup
+renders the TARGET message as the same grid (a size row, then a raw-wired 3x9 GoalRow.Grid,
+blanks included, cells worded identically). The
 drawn WAITING FOR ROW/COLUMN/CHARACTER protocol status is deliberately NOT a live node
 (zine-documented; user decision) — popup capture still carries it. Same rule reused
 for the Redshift modem's status panel.

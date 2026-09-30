@@ -288,6 +288,11 @@ namespace Echopunks.Screens
                     edges[i] = AddGoalTable(b, row.Table, "ed.gpop." + i);
                     continue;
                 }
+                if (row.Grid != null)
+                {
+                    edges[i] = AddGoalGrid(b, row.Grid, "ed.gpop." + i);
+                    continue;
+                }
                 var id = ControlId.Structural("ed.gpop." + i);
                 edges[i] = ColumnGrid.Edges.Single(id);
                 b.AddItem(id, new NodeVtable
@@ -346,6 +351,34 @@ namespace Echopunks.Screens
             return edges;
         }
 
+        // ---- a drawn cell GRID (the highway sign's target message, user design 2026-09-30):
+        // row-major, every cell present (blanks included), up/down = same column in the next
+        // row, left/right = along the row. Cells carry their own coordinates, so no contexts. ----
+
+        private ColumnGrid.Edges AddGoalGrid(GraphBuilder b, string[][] grid, string key)
+        {
+            var ids = new ControlId[grid.Length][];
+            for (int r = 0; r < grid.Length; r++)
+            {
+                ids[r] = new ControlId[grid[r].Length];
+                for (int c = 0; c < grid[r].Length; c++)
+                {
+                    ids[r][c] = ControlId.Structural(key + "." + r + "." + c);
+                    b.AddNode(ids[r][c], ColumnGrid.TextCell(grid[r][c], CloseGoalPopup, CloseGoalPopup));
+                }
+            }
+            for (int r = 0; r < ids.Length; r++)
+                for (int c = 0; c < ids[r].Length; c++)
+                {
+                    if (c > 0) b.Connect(ids[r][c], GraphDir.Left, ids[r][c - 1]);
+                    if (c + 1 < ids[r].Length) b.Connect(ids[r][c], GraphDir.Right, ids[r][c + 1]);
+                    if (r > 0) b.Connect(ids[r][c], GraphDir.Up, ids[r - 1][Math.Min(c, ids[r - 1].Length - 1)]);
+                    if (r + 1 < ids.Length) b.Connect(ids[r][c], GraphDir.Down, ids[r + 1][Math.Min(c, ids[r + 1].Length - 1)]);
+                }
+            var last = ids[ids.Length - 1];
+            return new ColumnGrid.Edges { Top = ids[0], Bottom = last, EnterTop = ids[0][0], EnterBottom = last[0] };
+        }
+
         /// <summary>A table cell's words: empty = "N/A" (user wording for table cells — the
         /// comma-join rows say "blank"), a redaction bar its name, anything else raw.</summary>
         private static string TableCellSpeech(string value)
@@ -360,6 +393,7 @@ namespace Echopunks.Screens
             public int Host;
             public int Required; // -1 on every non-file row
             public PanelTable Table; // a captured panel table (Text unused) — built as a grid
+            public string[][] Grid;  // a cell grid, row-major, cells fully composed (Text unused)
 
             public static GoalRow Plain(string text)
                 => new GoalRow { Text = text, Host = -1, Required = -1 };
@@ -530,8 +564,9 @@ namespace Echopunks.Screens
         // The highway sign (SFCTA) draws its content as glyph SPRITES from a font atlas — no
         // text for PanelCapture to record — and in the goal view those glyphs render the TARGET
         // message. Read it from the model instead: HighwaySign.string_1, the sign as one flat
-        // 3x9 string. Rows speak with their 0-based index — the same row number a #DATA write
-        // addresses — split exactly as the sign displays them (words may break across rows).
+        // 3x9 string, laid out as the drawn cell grid (blank cells included). Cells speak
+        // "{col}, {row}, {char}", 0-based — the numbers a #DATA write addresses, the same
+        // words the editor's live sign grid speaks.
         private static readonly FieldInfo SignTargetField =
             Deobf.Field(typeof(SpecialPuzzleLogics.HighwaySign), "string_1");
         // The sign's geometry (9 columns x 3 rows, static readonly game-side) — drawn as a
@@ -553,25 +588,17 @@ namespace Echopunks.Screens
                 int cols = 9, signRows = 3;
                 try { if (SignColsField != null) cols = (int)SignColsField.GetValue(null); } catch { }
                 try { if (SignRowsField != null) signRows = (int)SignRowsField.GetValue(null); } catch { }
+                if (text.Length < cols * signRows) return; // malformed target: no partial grid
                 rows.Add(GoalRow.Plain(Loc.T("editor.goal.sign.size", new { rows = signRows, cols })));
-                for (int row = 0; row * cols < text.Length; row++)
+                var grid = new string[signRows][];
+                for (int row = 0; row < signRows; row++)
                 {
-                    int len = Math.Min(cols, text.Length - row * cols);
-                    string line = text.Substring(row * cols, len);
-                    // Column span (0-based, the same numbers a #DATA write addresses) — the
-                    // drawn sign shows WHERE in the row the words sit, so the rows say it too.
-                    int first = -1, last = -1;
-                    for (int i = 0; i < line.Length; i++)
-                        if (line[i] != ' ') { if (first < 0) first = i; last = i; }
-                    if (first < 0)
-                        rows.Add(GoalRow.Plain(Loc.T("editor.goal.sign", new { row, text = Loc.T("text.blank") })));
-                    else if (first == last)
-                        rows.Add(GoalRow.Plain(Loc.T("editor.goal.sign.col1", new
-                        { row, col = first, text = CharSpeech(line[first].ToString()) })));
-                    else
-                        rows.Add(GoalRow.Plain(Loc.T("editor.goal.sign.cols", new
-                        { row, lo = first, hi = last, text = line.Substring(first, last - first + 1) })));
+                    grid[row] = new string[cols];
+                    for (int col = 0; col < cols; col++)
+                        grid[row][col] = Loc.T("editor.goal.sign.cell", new
+                        { col, row, text = CharSpeech(text[row * cols + col].ToString()) });
                 }
+                rows.Add(new GoalRow { Grid = grid, Host = -1, Required = -1 });
             }
             catch { }
         }

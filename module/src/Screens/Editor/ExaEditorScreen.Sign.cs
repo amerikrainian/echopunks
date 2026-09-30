@@ -14,8 +14,9 @@ namespace Echopunks.Screens
         // host-scoped info always follows selection, never a general stop): present only when
         // the selected host owns the sign's registers. One node per cell, up/down = rows with
         // the column preserved, left/right = columns.
-        // Cells speak BARE — the character, or "blank" — position is implicit in the
-        // navigation, like the drawn cell grid a sighted player counts. Values are the LIVE
+        // Cells speak "{col}, {row}" then the character (or "blank") — 0-based, the numbers a
+        // #DATA write addresses (user rule, 2026-09-30: the coordinates are what a program
+        // computes, so hearing them beats counting arrow presses). No counts. Values are the LIVE
         // sign (per-frame sim rebuild while editing = the initial road-work message;
         // persistent while armed = whatever the program has written so far), re-resolved on
         // every announce and declared Live, so the focused cell re-announces when a
@@ -46,15 +47,19 @@ namespace Echopunks.Screens
                 b.StartRow("sign"); // SHARED row key = column-preserving up/down (VerticalTarget)
                 for (int c = 0; c < cols; c++)
                 {
-                    int cell = r * cols + c;
+                    int cell = r * cols + c, row = r, col = c;
                     b.AddItem(ControlId.Structural("ed.sign." + r + "." + c), new NodeVtable
                     {
                         ControlType = ControlTypes.Text,
-                        SpeaksOwnPosition = true, // bare cells, no counts (user rule)
+                        SpeaksOwnPosition = true, // coordinates replace counts (user rule)
                         Announcements = new[]
                         {
-                            new NodeAnnouncement(() => CellText(cell), live: true,
+                            // Coordinates static, contents Live: a #DATA write re-speaks only
+                            // the character, not the address.
+                            new NodeAnnouncement(() => Loc.T("editor.sign.cell", new { col, row }),
                                 kind: AnnouncementKinds.Label),
+                            new NodeAnnouncement(() => CellText(cell), live: true,
+                                kind: AnnouncementKinds.Value),
                         },
                     });
                 }
