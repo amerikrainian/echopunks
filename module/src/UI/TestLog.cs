@@ -12,9 +12,9 @@ namespace Echopunks.UI
     /// </summary>
     internal sealed class TestLog
     {
-        // Longer strings than the execution log (full error messages); ~2M entries ≈ 300 MB —
-        // silent insurance only (see GroupedLog), reachable only by an unattended
-        // spawn-and-die loop left fast-forwarding for hours.
+        // ~2M entries — silent insurance only (see GroupedLog), reachable only by an
+        // unattended spawn-and-die loop left fast-forwarding for hours. Compact storage keeps
+        // each distinct message once (such a loop repeats the same few errors).
         public const int DefaultMaxEntries = 2000000;
 
         private readonly GroupedLog<int> _log;

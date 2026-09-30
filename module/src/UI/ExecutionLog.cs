@@ -13,8 +13,10 @@ namespace Echopunks.UI
     /// </summary>
     internal sealed class ExecutionLog
     {
-        // ~10M entries ≈ 1-2 GB ≈ 25 minutes of NONSTOP fast-forward (observed ~7k entries/s) —
-        // silent insurance only (see GroupedLog); realistic runs are hundreds of times smaller.
+        // ~10M entries ≈ 25 minutes of NONSTOP fast-forward (observed ~7k entries/s) — silent
+        // insurance only (see GroupedLog). Compact storage makes that ~40 MB of entry ids plus
+        // the distinct texts (a looping program repeats a handful); realistic runs are hundreds
+        // of times smaller.
         public const int DefaultMaxEntries = 10000000;
 
         public struct CycleKey : IEquatable<CycleKey>

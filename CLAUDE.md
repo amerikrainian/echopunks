@@ -811,7 +811,12 @@ Patches/ExecutionCapture on Sim.method_55, the single per-EXA dispatch):
 - Both logs: cleared on each ARMING (the last run stays browsable after it stops),
   absent while empty, UNCAPPED stores (shared BCL-pure UI/GroupedLog; a silent
   insurance cap — 10M exec / 2M test entries — only so an unattended loop can't OOM;
-  sheds oldest whole). CYCLES RESTART AT 0 every test/round, so labels name their
+  sheds oldest whole). COMPACT storage (2026-09-30, a 1M-cycle freeze report): texts are
+  interned into a string table, entries are int ids in one chunked arrival-order sequence,
+  a group is a contiguous run of it (adds to an OLDER group go to a per-group late list) —
+  that run's 8M entries / 9 distinct texts went from ~610 MB live to ~80 MB, with nothing
+  per entry for the GC to scan; GroupedLogTests drives it against the old store verbatim.
+  CYCLES RESTART AT 0 every test/round, so labels name their
   test when the log spans several; Ctrl+Up/Down hops cycles on a single-test run but
   TESTS when it spans several (NodeVtable.OnRegionJump — the adjacent test is usually
   outside the materialized window). The GRAPH materializes only a WINDOW (≤51
