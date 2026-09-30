@@ -21,11 +21,16 @@ namespace Echopunks.Tests
         private readonly TestSpeech _speech = new TestSpeech();
         private readonly GraphNavigator _nav = new GraphNavigator();
 
-        public GraphNavigatorTests() { FocusMode.Active = true; }
+        public GraphNavigatorTests()
+        {
+            FocusMode.Active = true;
+            TypingEcho.ResetForTests(true); // the default, never the dev machine's saved F6 choice
+        }
 
         public void Dispose()
         {
             FocusMode.Active = true;
+            TypingEcho.ResetForTests(null);
             _speech.Dispose();
         }
 

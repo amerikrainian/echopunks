@@ -28,5 +28,9 @@ namespace Echopunks
             HostConfig.SetBool(Key, _enabled.Value);
             Speech.Tts.Speak(Loc.T(_enabled.Value ? "text.echo.on" : "text.echo.off"), interrupt: true);
         }
+
+        /// <summary>Test seam: pin the flag without touching settings.json (null = re-read it on
+        /// next use) — echo tests must not depend on the machine's saved F6 choice.</summary>
+        internal static void ResetForTests(bool? enabled) => _enabled = enabled;
     }
 }
