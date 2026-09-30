@@ -583,11 +583,14 @@ namespace Echopunks.UI
             string removed = old.Substring(prefix, old.Length - prefix - suffix);
             string added = v.Substring(prefix, v.Length - prefix - suffix);
 
+            // F6 (TypingEcho) silences TYPED characters only — deletions always speak.
             if (added.Length > 0 && removed.Length == 0)
-                Speak(EchoText(added, caps), interrupt: true);
+            {
+                if (TypingEcho.Enabled) Speak(EchoText(added, caps), interrupt: true);
+            }
             else if (removed.Length > 0 && added.Length == 0)
                 Speak(EchoText(removed, caps), interrupt: true);
-            else if (added.Length > 0)
+            else if (added.Length > 0 && TypingEcho.Enabled)
                 Speak(EchoText(added, caps), interrupt: true); // replaced (selection typed over)
         }
 

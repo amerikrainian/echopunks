@@ -16,8 +16,13 @@ namespace Echopunks.UI
         /// <summary>True when something is focused (the navigator owns the keys).</summary>
         public static bool HasFocus => Active != null && Active.HasFocus;
 
-        public static bool DispatchJustPressed(InputAction action) =>
-            Active != null && Active.OnInputJustPressed(action);
+        public static bool DispatchJustPressed(InputAction action)
+        {
+            // Global, ahead of the navigator: a caret-owning text node bubbles most keys to the
+            // game, and a text field is exactly where the echo toggle is wanted.
+            if (action.Key == "ui.echo") { TypingEcho.Toggle(); return true; }
+            return Active != null && Active.OnInputJustPressed(action);
+        }
 
         public static void AnnounceCurrent() => Active?.AnnounceCurrent();
 

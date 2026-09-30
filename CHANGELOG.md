@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.5
+
+- Added ability to toggle key echo with F6.
+
 ## V0.1.4
 
 - Goal popups that deal with a table of values render them as an actual table rather than an n-tuple of values.

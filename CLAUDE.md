@@ -339,7 +339,12 @@ Module (each reload starts this half cold — statics are per-load):
   deliberately deferred). TRAP: SCREEN-SCOPED action ids (ui.step, ui.runto,
   ui.followNext, …) are dispatched through an explicit whitelist switch in
   OnInputJustPressed — a new action id must be added there or its binding
-  matches and then goes nowhere (bit ui.followNext, 2026-08-23). SELECTION-FOLLOWS-FOCUS: a node with `NodeVtable.OnSelect`
+  matches and then goes nowhere (bit ui.followNext, 2026-08-23). GLOBAL toggles (ui.echo =
+F6, `TypingEcho` — silences TYPED characters only, deletions always speak; persisted as
+`speech.typingEcho` via `HostConfig.Set`, which rewrites settings.json whole and refuses to
+overwrite a file that failed to parse) are handled in
+`Navigation.DispatchJustPressed` AHEAD of the navigator, so a caret-owning text node's
+key bubbling can't swallow them. SELECTION-FOLLOWS-FOCUS: a node with `NodeVtable.OnSelect`
   runs it on every DIRECTIONAL landing (arrows/Home/End/region jumps — never Tab-stop
   cycling), before the announce; tabs and list rows select as you scroll, no Enter
   needed (Enter/OnActivate stays separate — task rows open on it). Such controls

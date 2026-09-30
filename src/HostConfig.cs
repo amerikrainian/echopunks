@@ -10,11 +10,14 @@ namespace Echopunks
     /// %LOCALAPPDATA%\Echopunks\settings.json — the same on-disk shape as WrathAccess's settings
     /// persistence, so the full Setting-tree port can adopt the file unchanged later. Read once,
     /// lazily; absent or broken file just means defaults. Host-side (the speech stack reads it
-    /// before any module exists). Parsing is in-box JavaScriptSerializer — no shipped JSON library.
+    /// before any module exists); the module reads and writes it too (InternalsVisibleTo) — Set
+    /// rewrites the whole file, values as strings. Parsing is in-box JavaScriptSerializer — no
+    /// shipped JSON library.
     /// </summary>
     internal static class HostConfig
     {
         private static Dictionary<string, string> _values;
+        private static bool _unreadable; // the file exists but failed to parse — Set won't clobber it
         private static readonly object Gate = new object();
 
         internal static string SettingsPath = Path.Combine(
@@ -38,14 +41,69 @@ namespace Echopunks
             }
         }
 
+        public static bool GetBool(string key, bool fallback)
+        {
+            bool b;
+            return bool.TryParse(Get(key, null), out b) ? b : fallback;
+        }
+
+        /// <summary>Store a value and rewrite the file (every other key kept). Written to a temp file
+        /// then swapped in, so a crash mid-write never leaves a truncated settings.json. Failure is a
+        /// log line — the in-memory value still holds for this session.</summary>
+        public static void Set(string key, string value)
+        {
+            lock (Gate)
+            {
+                if (_values == null) _values = LoadFile(SettingsPath);
+                _values[key] = value;
+                if (_unreadable)
+                {
+                    // Rewriting would replace a hand-edited file (a typo away from valid) with
+                    // just the keys set this session — keep the user's file, lose only persistence.
+                    Log.Warning("[config] " + SettingsPath + " is unreadable; not overwriting it (" + key + " holds for this session only).");
+                    return;
+                }
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath));
+                    string tmp = SettingsPath + ".tmp";
+                    File.WriteAllText(tmp, Serialize(_values));
+                    if (File.Exists(SettingsPath)) File.Replace(tmp, SettingsPath, null);
+                    else File.Move(tmp, SettingsPath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning("[config] could not write " + SettingsPath + " (" + ex.Message + ")");
+                }
+            }
+        }
+
+        public static void SetBool(string key, bool value) => Set(key, value ? "true" : "false");
+
+        // One key per line, sorted, so the file stays hand-editable.
+        private static string Serialize(Dictionary<string, string> values)
+        {
+            var json = new JavaScriptSerializer();
+            var keys = new List<string>(values.Keys);
+            keys.Sort(StringComparer.Ordinal);
+            var sb = new System.Text.StringBuilder("{\n");
+            for (int i = 0; i < keys.Count; i++)
+            {
+                sb.Append("  ").Append(json.Serialize(keys[i])).Append(": ").Append(json.Serialize(values[keys[i]]));
+                sb.Append(i < keys.Count - 1 ? ",\n" : "\n");
+            }
+            return sb.Append("}\n").ToString();
+        }
+
         /// <summary>Test seam: forget the cache so the next Get re-reads SettingsPath.</summary>
         internal static void ResetForTests()
         {
-            lock (Gate) _values = null;
+            lock (Gate) { _values = null; _unreadable = false; }
         }
 
         private static Dictionary<string, string> LoadFile(string path)
         {
+            _unreadable = false;
             try
             {
                 if (!File.Exists(path) && path == DefaultSettingsPath && File.Exists(LegacySettingsPath))
@@ -66,6 +124,7 @@ namespace Echopunks
             catch (Exception ex)
             {
                 Log.Warning("[config] could not read " + path + " (" + ex.Message + ") — using defaults.");
+                _unreadable = File.Exists(path);
                 return new Dictionary<string, string>();
             }
         }

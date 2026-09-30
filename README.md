@@ -19,6 +19,7 @@ Screen-reader accessibility mod for [EXAPUNKS](https://store.steampowered.com/ap
 | Backspace | Secondary action where one exists: delete the focused solution / network / EXA window, cancel a picked-up solitaire card, close a popup |
 | Space | Read the game's own tooltip for the focused item, when it has one |
 | Escape | Back / close / leave — handled by the game itself |
+| F6 | Toggle typing echo in text fields ("Echo characters" / "Echo off"); deleted characters are always spoken, and the choice is remembered |
 
 ### EXA editor
 

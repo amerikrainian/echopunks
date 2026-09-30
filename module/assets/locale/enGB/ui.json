@@ -275,6 +275,8 @@
   "text.capital": "Cap {letter}",
   "text.selected": "{text} selected",
   "text.unselected": "{text} unselected",
+  "text.echo.on": "Echo characters",
+  "text.echo.off": "Echo off",
 
   "screen.controlpanel": "Control panel",
   "panel.close": "Close control panel",

@@ -111,6 +111,8 @@ namespace Echopunks
             Input.InputManager.Register("ui.reg.t", "Read T register", Input.InputCategory.UI).AddBinding(Input.Scancode.T);
             Input.InputManager.Register("ui.reg.f", "Read F register", Input.InputCategory.UI).AddBinding(Input.Scancode.F);
             Input.InputManager.Register("ui.reg.m", "Read M register", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
+            // Typing echo on/off (the game reads no F6). Handled in Navigation, ahead of any screen.
+            Input.InputManager.Register("ui.echo", "Toggle typing echo", Input.InputCategory.UI).AddBinding(Input.Scancode.F6);
 
             Input.InputManager.ActiveCategoriesProvider = () =>
                 new System.Collections.Generic.List<Input.InputCategory>(Screens.ScreenManager.ActiveInputCategories());
