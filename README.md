@@ -53,7 +53,7 @@ In the Redshift sandbox, while a program is free-running every key belongs to th
 
 | Key | What it does |
 |---|---|
-| Space, Tab or Enter | Advance to the next line (one press, even mid-animation) |
+| Space, Tab or Enter | Advance to the next line |
 | Escape | Skip |
 | Up / Down, Enter | In an EMBER-2 conversation with answer choices: review the choices and pick one |
 | 1 – 9 | Pick an answer directly  |
