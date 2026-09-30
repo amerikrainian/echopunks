@@ -26,6 +26,9 @@ namespace Echopunks.UI
 
         public static void AnnounceCurrent() => Active?.AnnounceCurrent();
 
+        /// <summary>Re-read just the focused node after an in-place change — see Navigator.</summary>
+        public static void ReannounceCurrent() => Active?.ReannounceCurrent();
+
         /// <summary>Re-establish initial focus if the focused screen has focusable content but nothing
         /// is focused yet. Ticked each frame by ScreenManager.</summary>
         public static void EnsureFocus() => Active?.EnsureFocus();

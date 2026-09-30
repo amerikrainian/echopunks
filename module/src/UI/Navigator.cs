@@ -36,6 +36,10 @@ namespace Echopunks.UI
         /// <summary>Announce the current focus in full (the container hierarchy down to the element).</summary>
         public abstract void AnnounceCurrent();
 
+        /// <summary>Rebuild now and re-read just the focused node (no enclosing contexts),
+        /// interrupting — for an action that changed the focused node itself in place.</summary>
+        public virtual void ReannounceCurrent() { }
+
         /// <summary>A screen closed (stack pop without <see cref="Screen.KeepStateOnPop"/>, or a child
         /// page removed): drop its per-screen state so reopening starts fresh.</summary>
         public virtual void ScreenClosed(Screen screen) { }

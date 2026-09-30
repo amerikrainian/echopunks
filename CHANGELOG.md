@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.1.7
+
+- You can now reorder exas with shift+arrows while in the windows stop.
+- Advancing through a cutscene no longer requires you to skip the animation first.
+
 ## V0.1.6
 
 - Alt+1 through Alt+6 in the editor jump to the task, EXA windows, hosts, code, test log and solution sections.

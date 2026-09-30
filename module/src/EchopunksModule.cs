@@ -104,6 +104,12 @@ namespace Echopunks
                 .AddBinding(Input.Scancode.Down, alt: true);
             Input.InputManager.Register("ui.followPrev", "Previous EXA instance", Input.InputCategory.UI)
                 .AddBinding(Input.Scancode.Up, alt: true);
+            // Reorder an EXA in the editor's window column (the game's mouse-only window drag):
+            // the order feeds the simulator's per-cycle scheduling, so it changes who wins races.
+            Input.InputManager.Register("ui.moveUp", "Move EXA up", Input.InputCategory.UI)
+                .AddBinding(Input.Scancode.Up, shift: true);
+            Input.InputManager.Register("ui.moveDown", "Move EXA down", Input.InputCategory.UI)
+                .AddBinding(Input.Scancode.Down, shift: true);
             // Register reads in the EXA editor: the bare register letter speaks that register
             // of the focused EXA. The screen withholds them while a text field has focus —
             // there the letters are typing.
@@ -149,6 +155,7 @@ namespace Echopunks
                 Patches.GameKeySuppression.Apply(_harmony); // focus-mode key swallow (see the class doc)
                 Patches.SimNarration.Apply(_harmony);       // buffer sim errors the model deletes too fast
                 Patches.ExecutionCapture.Apply(_harmony);   // per-cycle executed instructions -> the execution log
+                Patches.CutsceneAdvance.Apply(_harmony);    // one press = the next cutscene line (after suppression: it forces keys through that seam)
                 Patches.PanelCapture.IsHostName = Screens.ExaEditorScreen.IsSpokenHostName;
                 Patches.PanelCapture.Apply(_harmony);       // special-puzzle panel text + goal-view force
                 Screens.CutsceneNotes.Apply();              // Moss's EXODUS recollection in the Ghast visit (campaign lists exist post-init)

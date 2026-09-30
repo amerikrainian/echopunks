@@ -161,7 +161,14 @@ namespace Echopunks.UI
                 if (_pendingStop != null)
                 {
                     var land = KeyGraph.StopLanding(_graph.Current, _graph.State, _pendingStop);
-                    if (land != null) _graph.Focus(land.Id);
+                    if (land != null && _graph.Focus(land.Id))
+                    {
+                        // Like LandOnStop: blur the old holder first (a rename commits), then a
+                        // text field lands ARMED — Alt+4 onto the code used to leave the game's
+                        // widget unfocused, arrows and typing dead until Tab out and back.
+                        FocusArrived(_graph.CurrentNode);
+                        ArmTextEntry(_graph.CurrentNode);
+                    }
                     _pendingStop = null; // announce rides the normal differ below
                 }
             }
@@ -227,6 +234,17 @@ namespace Echopunks.UI
             var node = _graph.CurrentNode;
             if (node == null) return;
             Speak(ComposeMove(null, node, entry: true));
+            _lastSpokenKey = node.Id;
+            _lastSpokenNode = node;
+        }
+
+        public override void ReannounceCurrent()
+        {
+            if (_graph == null || !_graph.Rerender()) return;
+            var node = _graph.CurrentNode;
+            if (node == null) return;
+            // from == to: the path diff keeps every enclosing context silent — just the node.
+            Speak(ComposeMove(node, node, entry: false), interrupt: true);
             _lastSpokenKey = node.Id;
             _lastSpokenNode = node;
         }
@@ -326,6 +344,8 @@ namespace Echopunks.UI
                 case "ui.jump.4":
                 case "ui.jump.5":
                 case "ui.jump.6":
+                case "ui.moveUp":
+                case "ui.moveDown":
                     // Screen-scoped actions: the focused screen may advertise a handler by id.
                     return Screen != null && Screen.InvokeAction(action.Key);
                 case "ui.tooltip":

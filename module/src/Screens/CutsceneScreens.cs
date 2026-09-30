@@ -47,6 +47,9 @@ namespace Echopunks.Screens
             if (vignette == null || line < 0 || line >= vignette.list_0.Count) return;
 
             if (ReferenceEquals(scene, _lastInstance) && line == _lastLine) return;
+            // Every later line arrives on a press (CutsceneAdvance: one press = the next line),
+            // so it cuts the previous one off; the first queues behind the screen name.
+            bool first = !ReferenceEquals(scene, _lastInstance);
             _lastInstance = scene;
             _lastLine = line;
 
@@ -60,7 +63,7 @@ namespace Echopunks.Screens
             string spoken = entry.vignetteCharacter_0 == VignetteCharacter.Moss
                 ? text
                 : Loc.T("cutscene.line", new { name = entry.vignetteCharacter_0.ToString(), text });
-            Speech.Tts.Speak(spoken);
+            Speech.Tts.Speak(spoken, interrupt: !first);
         }
     }
 
@@ -206,6 +209,8 @@ namespace Echopunks.Screens
             if (!TryRead(out s, out part, out line, out choice, out chosen, out fullscreen, out list)) return;
 
             bool same = ReferenceEquals(_instance, s) && part == _part && line == _line && chosen == _chosen;
+            // As in the visual novel: a later line came from a press and cuts the last one off.
+            _interrupt = ReferenceEquals(_instance, s);
             _instance = s; _part = part; _line = line; _chosen = chosen;
             if (same) return;
 
@@ -248,9 +253,11 @@ namespace Echopunks.Screens
             catch { return null; }
         }
 
-        private static void Say(string text)
+        private bool _interrupt;
+
+        private void Say(string text)
         {
-            if (!string.IsNullOrEmpty(text)) Speech.Tts.Speak(text);
+            if (!string.IsNullOrEmpty(text)) Speech.Tts.Speak(text, interrupt: _interrupt);
         }
     }
 

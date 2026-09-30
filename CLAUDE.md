@@ -447,7 +447,17 @@ key bubbling can't swallow them. SELECTION-FOLLOWS-FOCUS: a node with `NodeVtabl
   live; OnUpdate watches the line index (privates via Deobf's T-row bridge) and speaks
   each line in full as it appears, speaker-prefixed per the drawn name plate (Moss =
   the player's plate-less narration, spoken bare; non-Moss lines are VOICE-ACTED and
-  TTS currently reads them anyway, subtitle-style). `EmberCutsceneScreen` over the
+  TTS currently reads them anyway, subtitle-style). ONE PRESS = THE NEXT LINE in both
+  players (`Patches/CutsceneAdvance.cs`, 2026-09-30): the players pace for sighted reading
+  (first press completes the typewriter, 0.25s cooldown, input dead during door animations,
+  slide-ins, pre-delays, EMBER's 5s blackout, screen transitions), so a prefix on each
+  imethod_1 watches the game's own advance predicates, collapses the blocking timers and
+  FORCES the advance key for that frame via GameKeySuppression.ForcedKey (cleared by a
+  finalizer) — the game's own advance path runs. A press the scene can't take yet
+  (transition; blackout's last frame, which switches the music) is held ≤~2s. EMBER's single
+  scripted reply accepts only click/digit 1, so the press forces 1 there; a real choice
+  drops it (the menu owns Enter). Lines after a scene's first speak INTERRUPTING (each
+  arrived on a press). `EmberCutsceneScreen` over the
   EMBER comic player (Ember2CutsceneScreen, name-preserved) — the game's only DIALOGUE
   CHOICES: each script line carries a LIST of texts (Ember2 lines = response variants
   picked by the player's previous choice int_2; non-Ember multi-text lines = answer
@@ -692,7 +702,9 @@ Alt+1..6 (screen-scoped ui.jump.1..6, user layout 2026-09-30) jump to task / win
 hosts / code / testlog / solution (JumpStops in FilePopup.cs's GetActions); an absent
 stop speaks "unavailable" via Navigation.StopPresent (FocusStop alone silently drops an
 absent stop). Alt+digit produces no SDL TEXTINPUT on Windows, so the jumps are safe from
-inside the code and name fields (verified live).
+inside the code and name fields (verified live). A jump onto a text field ARMS it (the
+deferred _pendingStop landing runs FocusArrived + ArmTextEntry like LandOnStop — before
+2026-09-30 Alt+4 left the code widget unfocused, arrows and typing dead).
 
 **Task stop**: description (rows build only when they carry content; the whole stop
 only when it has rows — the sandbox ships a 0-byte description), the "Network logo: …"
@@ -756,9 +768,22 @@ dictionary_1; EntityID keys are Type/Hostname/Number — immovable files key
 id@hostname). FILE ROWS ARE ORDERED AS DRAWN: dictionary_1 is an insertion-ordered
 window-STATE cache that never prunes (it accumulates every id windowed across
 test-run switches), while the game sorts its window set by
-SimEntity.entityDisplayRank_0 (method_40's OrderBy — EXAs rank 0, files a
-creation-order counter, host by host as authored); enumerating the cache read
-PB024's column roughly backwards (audit 2026-09-06). Rows are keyed by ENTITY number — unique even for REPL copies (a
+SimEntity.entityDisplayRank_0 (method_40's OrderBy — rank = (group, creation counter):
+an EXA's group is its program's index in solution_0.list_0, a REPL copy inherits its
+parent's; files are group 9000/9001, so file rows run host by host as authored);
+enumerating the cache read PB024's column roughly backwards (audit 2026-09-06). EXA rows
+sort by (LIVE solution-list index, counter) — the game's order, each copy right after its
+parent (sim.list_1 appends copies last), and current the instant a reorder lands (the
+sim's ranks only catch up on the next game frame). REORDER (2026-09-30): Shift+Up/Down
+(screen-scoped ui.moveUp/Down, offered only on an ORIGINAL's EXA cell so the chord stays
+the code field's native selection) swaps the program in solution_0.list_0 — the game's
+mouse drag re-sorts that same list by window height (~2606) — then dirty + snapshot
+(Ctrl+Z restores) and Navigation.ReannounceCurrent (just the row, new position). Editing
+only; edges/armed = silent no-op (user spec). THE ORDER IS SIM-SIGNIFICANT: the list
+index is the display rank, the input to Sim.method_54's per-cycle Fisher-Yates shuffle
+(seeded from the puzzle id in normal mode), so it decides same-cycle races — M
+(readers take the first sender in shuffled order), GRAB, LINK capacity, RAND/KILL
+draws, MAKE ids — and the home-host starting cells. Rows are keyed by ENTITY number — unique even for REPL copies (a
 replicated SimExa shares its parent's SOLUTION number but gets a fresh EntityID and
 the game's ":n" name; keying by solution number created duplicate ControlIds which
 KILL the whole graph rebuild). Copies get read-only rows; edit (Enter → code,

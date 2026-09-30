@@ -84,10 +84,20 @@ namespace Echopunks.Patches
 
         // __0 = the keycode argument (positional injection — the shipping method's parameter
         // names are obfuscated, so never bind by name here).
+        /// <summary>A keycode reported JUST PRESSED regardless of the keyboard — set only for the
+        /// span of one game call (a prefix sets it, that call's finalizer clears it). The
+        /// cutscene one-press advance uses it to run the game's own advance path.</summary>
+        public static int ForcedKey;
+
         private static bool KeyPrefix(SDL.GEnum195 __0, ref bool __result)
         {
             try
             {
+                if (ForcedKey != 0 && (int)__0 == ForcedKey)
+                {
+                    __result = true;
+                    return false;
+                }
                 // Escape is never suppressed — EXCEPT while a mod-side modal is open (the file-
                 // values popup): the game acting on Escape there would reset-or-leave the task
                 // underneath the popup the user is merely closing.

@@ -38,6 +38,7 @@ Screen-reader accessibility mod for [EXAPUNKS](https://store.steampowered.com/ap
 | Ctrl+Z / Ctrl+Y | Undo / redo  |
 | Arrows, Home, End, Page Up / Down, Shift+arrows, Ctrl+A, Ctrl+C / X / V | Normal text editing in the code field ; the mod reads the line or character you land on |
 | Right / Left on an EXA window row | Along the row: the EXA, its M-bus toggle, its Name field |
+| Shift+Up / Shift+Down on an EXA window row | Move the EXA up or down the list (the game's window drag; the order decides which EXA wins when several compete in the same cycle). Silent when it can't move |
 | Type in an EXA's Name field | Rename the EXA (two characters; Backspace deletes; Enter or moving away commits) |
 | Enter on a file row | Open the file's values, one row per item |
 | Enter on a link row | Jump to the host at the other end |
@@ -52,7 +53,7 @@ In the Redshift sandbox, while a program is free-running every key belongs to th
 
 | Key | What it does |
 |---|---|
-| Space, Tab or Enter | Advance to the next line |
+| Space, Tab or Enter | Advance to the next line (one press, even mid-animation) |
 | Escape | Skip |
 | Up / Down, Enter | In an EMBER-2 conversation with answer choices: review the choices and pick one |
 | 1 – 9 | Pick an answer directly  |

@@ -189,6 +189,14 @@ namespace Echopunks.Screens
                 yield return new ElementAction("ui.reg.f", () => SpeakRegister('F'));
                 yield return new ElementAction("ui.reg.m", () => SpeakRegister('M'));
             }
+            // Shift+Up/Down on an EXA's window row reorders it (the window drag). Offered on the
+            // row's EXA cell only, so the chord stays the code field's native selection.
+            int moving = FocusedWindowExa();
+            if (moving >= 0)
+            {
+                yield return new ElementAction("ui.moveUp", () => MoveExa(moving, -1));
+                yield return new ElementAction("ui.moveDown", () => MoveExa(moving, 1));
+            }
             for (int i = 0; i < JumpStops.Length; i++)
             {
                 string stop = JumpStops[i];

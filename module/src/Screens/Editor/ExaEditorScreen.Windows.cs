@@ -34,6 +34,8 @@ namespace Echopunks.Screens
 
             // ---- pass 1: the window set, in drawn order (EXAs, then files) ----
             var exas = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<int, int>>(); // entity number, solution number
+            var exaOrder = new System.Collections.Generic.List<long>(); // parallel: drawn-order sort key
+            var programs = e.solution_0.list_0;
             var seen = new System.Collections.Generic.HashSet<int>();
             foreach (var entity in sim.list_1)
             {
@@ -57,6 +59,20 @@ namespace Echopunks.Screens
                 if (!seen.Add(n)) continue;
                 try { if (HostHidden(exa.method_0(), false)) continue; } catch { }
                 exas.Add(new System.Collections.Generic.KeyValuePair<int, int>(n, solution));
+                // The game draws EXA windows sorted by display rank = (program's index in the
+                // solution list, creation counter): originals in list order, each REPL copy right
+                // after its parent (sim.list_1 appends copies at the END). Keying on the LIVE list
+                // index rather than the rank also shows a reorder at once — the sim (and its
+                // ranks) only rebuilds on the game's next frame.
+                long order = 0;
+                try { order = ((long)programs.IndexOf(exa.maybe_2.method_2()) << 32) + exa.entityDisplayRank_0.int_1; } catch { }
+                exaOrder.Add(order);
+            }
+            if (exas.Count > 1)
+            {
+                var sorted = System.Linq.Enumerable.ToList(System.Linq.Enumerable.OrderBy(
+                    System.Linq.Enumerable.Range(0, exas.Count), i => exaOrder[i]));
+                exas = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Select(sorted, i => exas[i]));
             }
 
             // FILE windows, after the EXAs like the drawn column: the game pre-opens a viewer
@@ -298,6 +314,48 @@ namespace Echopunks.Screens
                 return int.TryParse(key.Substring("win.name.".Length), out n) ? n : -1;
             }
             catch { return -1; }
+        }
+
+        /// <summary>The program number of a focused ORIGINAL's EXA cell ("win.exa.N" with a
+        /// SolutionExa behind it — a REPL copy's row keys an entity number no program has), else -1.</summary>
+        private static int FocusedWindowExa()
+        {
+            try
+            {
+                var key = Navigation.FocusedNodeId?.StructuralKey as string;
+                if (key == null || !key.StartsWith("win.exa.", StringComparison.Ordinal)) return -1;
+                int n;
+                if (!int.TryParse(key.Substring("win.exa.".Length), out n)) return -1;
+                return SolutionExaOf(n) != null ? n : -1;
+            }
+            catch { return -1; }
+        }
+
+        // ---- EXA reorder: the window drag (EditorScreen ~2606 — while a window is dragged the
+        // game re-sorts solution_0.list_0 by window height and dirties). The list's order is each
+        // program's display rank, the input to the sim's per-cycle shuffle, so it decides
+        // same-cycle races (M, GRAB, LINK, RAND). Gated like the drag: editing only. The swap is
+        // snapshotted so Ctrl+Z restores the order (the snapshot copies the list). Nothing to do
+        // (top/bottom edge, running) = silent no-op. ----
+
+        private static void MoveExa(int number, int dir)
+        {
+            var e = Editor;
+            var exa = SolutionExaOf(number);
+            if (e == null || exa == null || !Editing(e)) return;
+            try
+            {
+                var list = e.solution_0.list_0;
+                int from = list.IndexOf(exa), to = from + dir;
+                if (from < 0 || to < 0 || to >= list.Count) return;
+                list[from] = list[to];
+                list[to] = exa;
+                Invoke(DirtyMethod, e);
+                Invoke(SnapshotMethod, e);
+                // Rows sort by the live list, so the rebuild already has the new position.
+                Navigation.ReannounceCurrent();
+            }
+            catch (Exception ex) { Log.Error("[editor] move EXA failed", ex); }
         }
 
         /// <summary>"at {host}" + the standard file readout — the map shows the same: the
