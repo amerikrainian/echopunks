@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.1.6
+
+- Alt+1 through Alt+6 in the editor jump to the task, EXA windows, hosts, code, test log and solution sections.
+- Highway sign cells now read their coordinates. Hopefully this will make it clear they're grids. Goal popups are adjusted to match.
+- Attempted to reduce memory pressure on million-cycle logs.
+
 ## V0.1.5
 
 - Added ability to toggle key echo with F6.
