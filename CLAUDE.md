@@ -688,6 +688,11 @@ throughout (reset-or-leave), except while a mod-side popup holds ModalCapturesEs
 (sandbox, armed) → stats → controls → go-to-cycle → test log → execution log →
 solution. Host-scoped info (links/files/registers/sign) always follows the SELECTED
 host, never a general stop (user rule).
+Alt+1..6 (screen-scoped ui.jump.1..6, user layout 2026-09-30) jump to task / windows /
+hosts / code / testlog / solution (JumpStops in FilePopup.cs's GetActions); an absent
+stop speaks "unavailable" via Navigation.StopPresent (FocusStop alone silently drops an
+absent stop). Alt+digit produces no SDL TEXTINPUT on Windows, so the jumps are safe from
+inside the code and name fields (verified live).
 
 **Task stop**: description (rows build only when they carry content; the whole stop
 only when it has rows — the sandbox ships a 0-byte description), the "Network logo: …"

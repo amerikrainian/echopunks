@@ -189,11 +189,27 @@ namespace Echopunks.Screens
                 yield return new ElementAction("ui.reg.f", () => SpeakRegister('F'));
                 yield return new ElementAction("ui.reg.m", () => SpeakRegister('M'));
             }
+            for (int i = 0; i < JumpStops.Length; i++)
+            {
+                string stop = JumpStops[i];
+                yield return new ElementAction("ui.jump." + (i + 1), () => JumpToStop(stop));
+            }
             // Escape closes the popups (their game-side Escape is suppressed while
             // ModalCapturesEscape holds — see GameKeySuppression). First match wins, so a
             // file popup stacked over the goal popup closes first, back onto its goal row.
             if (FilePopupOpen) yield return new ElementAction(ActionIds.Back, CloseFilePopup);
             if (_goalPopup) yield return new ElementAction(ActionIds.Back, CloseGoalPopup);
+        }
+
+        // Alt+1..6 (user layout, 2026-09-30): task, windows, hosts, code, test log (errors +
+        // goal flips), solution. A stop the render lacks right now (no run yet = no test log;
+        // a popup open = only the popup) speaks "unavailable" instead of silently doing nothing.
+        private static readonly string[] JumpStops = { "task", "windows", "hosts", "code", "testlog", "solution" };
+
+        private static void JumpToStop(string stop)
+        {
+            if (Navigation.StopPresent(stop)) Navigation.FocusStop(stop);
+            else Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true);
         }
 
         /// <summary>The popups are mod-side only — Escape must close THEM, not act in the game

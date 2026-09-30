@@ -47,6 +47,10 @@ namespace Echopunks.UI
         /// <summary>Move focus to the landing node of a Tab-stop (a wizard landing on new page content).</summary>
         public virtual void FocusStop(object stopKey) { }
 
+        /// <summary>True when the current render has a node to land on in this Tab-stop —
+        /// FocusStop on an absent stop is silently dropped, so callers that owe feedback ask first.</summary>
+        public virtual bool StopPresent(object stopKey) => false;
+
         /// <summary>The Tab-stop the focused node belongs to, or null.</summary>
         public virtual object FocusedStopKey => null;
 

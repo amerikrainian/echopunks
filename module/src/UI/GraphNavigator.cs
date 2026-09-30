@@ -85,6 +85,9 @@ namespace Echopunks.UI
             _pendingStop = stopKey;
         }
 
+        public override bool StopPresent(object stopKey)
+            => _graph?.Current != null && _graph.StopLanding(stopKey) != null;
+
         public override object FocusedStopKey => _graph?.CurrentNode?.StopKey;
 
         public override bool TextEntryFocused => _graph?.CurrentNode?.Vtable?.TextEntry == true;
@@ -317,6 +320,12 @@ namespace Echopunks.UI
                 case "ui.reg.t":
                 case "ui.reg.f":
                 case "ui.reg.m":
+                case "ui.jump.1":
+                case "ui.jump.2":
+                case "ui.jump.3":
+                case "ui.jump.4":
+                case "ui.jump.5":
+                case "ui.jump.6":
                     // Screen-scoped actions: the focused screen may advertise a handler by id.
                     return Screen != null && Screen.InvokeAction(action.Key);
                 case "ui.tooltip":

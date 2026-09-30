@@ -111,6 +111,17 @@ namespace Echopunks
             Input.InputManager.Register("ui.reg.t", "Read T register", Input.InputCategory.UI).AddBinding(Input.Scancode.T);
             Input.InputManager.Register("ui.reg.f", "Read F register", Input.InputCategory.UI).AddBinding(Input.Scancode.F);
             Input.InputManager.Register("ui.reg.m", "Read M register", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
+            // Alt+1..6 jump straight to a Tab stop (the EXA editor maps them: task, windows,
+            // hosts, code, test log, solution). Alt keeps the digits free for typing — Windows
+            // sends no text input for Alt+digit, so a focused code field never sees them.
+            Input.Scancode[] jumpKeys =
+            {
+                Input.Scancode.Num1, Input.Scancode.Num2, Input.Scancode.Num3,
+                Input.Scancode.Num4, Input.Scancode.Num5, Input.Scancode.Num6,
+            };
+            for (int i = 0; i < jumpKeys.Length; i++)
+                Input.InputManager.Register("ui.jump." + (i + 1), "Jump to section " + (i + 1), Input.InputCategory.UI)
+                    .AddBinding(jumpKeys[i], alt: true);
             // Typing echo on/off (the game reads no F6). Handled in Navigation, ahead of any screen.
             Input.InputManager.Register("ui.echo", "Toggle typing echo", Input.InputCategory.UI).AddBinding(Input.Scancode.F6);
 

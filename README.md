@@ -25,6 +25,7 @@ Screen-reader accessibility mod for [EXAPUNKS](https://store.steampowered.com/ap
 
 | Key | What it does |
 |---|---|
+| Alt+1 to Alt+6 | Jump to the task, EXA windows, hosts, code, test log (errors and goals completed or failed) or solution section; "unavailable" when that section isn't there right now |
 | F2 | Step the simulation one cycle (hold to repeat) |
 | F3 / F4 / F5 | Pause / run / fast-forward  |
 | F1 | Open the goal view as a readable popup (game key; also the Show Goal button) |

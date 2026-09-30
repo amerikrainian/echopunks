@@ -42,6 +42,9 @@ namespace Echopunks.UI
         /// <summary>Move focus to the landing node of a Tab-stop.</summary>
         public static void FocusStop(object stopKey) => Active?.FocusStop(stopKey);
 
+        /// <summary>True when the active navigator's current render has this Tab-stop.</summary>
+        public static bool StopPresent(object stopKey) => Active != null && Active.StopPresent(stopKey);
+
         /// <summary>The Tab-stop the focused node belongs to, or null.</summary>
         public static object FocusedStopKey => Active?.FocusedStopKey;
 
