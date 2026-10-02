@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.8
+
+- Fixed false fallback to SAPI occurring on some users' machines
+
 ## V0.1.7
 
 - You can now reorder exas with shift+arrows while in the windows stop.

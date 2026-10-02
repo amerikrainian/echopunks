@@ -41,8 +41,12 @@ namespace Echopunks.Speech
             InvalidAudioFormat = 18,
             InternalBackendLimitExceeded = 19,
             BackendEnteredUndefinedState = 20,
+            LibraryLoadFailed = 21,
+            LibraryInvalid = 22,
+            IncompatibleAbi = 23,
         }
 
+        // Every bit prism.h names, so the log's feature listing never degrades to a bare number.
         [Flags]
         public enum BackendFeatures : ulong
         {
@@ -53,7 +57,53 @@ namespace Echopunks.Speech
             SupportsOutput = 1UL << 5,
             SupportsIsSpeaking = 1UL << 6,
             SupportsStop = 1UL << 7,
+            SupportsPause = 1UL << 8,
+            SupportsResume = 1UL << 9,
+            SupportsSetVolume = 1UL << 10,
+            SupportsGetVolume = 1UL << 11,
+            SupportsSetRate = 1UL << 12,
+            SupportsGetRate = 1UL << 13,
+            SupportsSetPitch = 1UL << 14,
+            SupportsGetPitch = 1UL << 15,
+            SupportsRefreshVoices = 1UL << 16,
+            SupportsCountVoices = 1UL << 17,
+            SupportsGetVoiceName = 1UL << 18,
+            SupportsGetVoiceLanguage = 1UL << 19,
+            SupportsGetVoice = 1UL << 20,
+            SupportsSetVoice = 1UL << 21,
+            SupportsGetChannels = 1UL << 22,
+            SupportsGetSampleRate = 1UL << 23,
+            SupportsGetBitDepth = 1UL << 24,
+            TrimsSilenceOnSpeak = 1UL << 25,
+            TrimsSilenceOnSpeakToMemory = 1UL << 26,
+            SupportsSpeakSsml = 1UL << 27,
+            SupportsSpeakToMemorySsml = 1UL << 28,
         }
+
+        [DllImport(Dll, EntryPoint = "prism_version_string")]
+        private static extern IntPtr VersionStringRaw();
+
+        public static string VersionString() => Utf8FromPtr(VersionStringRaw());
+
+        public enum LogLevel : int { Trace = 0, Debug = 1, Info = 2, Warn = 3, Error = 4, None = 5 }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void LogCallback(IntPtr userdata, LogLevel level, IntPtr source, IntPtr message);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LogHandler
+        {
+            public IntPtr Fn;
+            public IntPtr Userdata;
+        }
+
+        [DllImport(Dll, EntryPoint = "prism_set_log_handler")]
+        public static extern LogHandler SetLogHandler(LogHandler handler);
+
+        [DllImport(Dll, EntryPoint = "prism_set_log_level")]
+        public static extern LogLevel SetLogLevel(LogLevel level);
+
+        public static string Utf8(IntPtr ptr) => Utf8FromPtr(ptr);
 
         [DllImport(Dll, EntryPoint = "prism_init")]
         public static extern IntPtr Init(IntPtr config);
@@ -72,6 +122,13 @@ namespace Echopunks.Speech
 
         public static string RegistryName(IntPtr ctx, ulong id) =>
             Utf8FromPtr(RegistryNameRaw(ctx, id));
+
+        [DllImport(Dll, EntryPoint = "prism_registry_priority")]
+        public static extern int RegistryPriority(IntPtr ctx, ulong id);
+
+        [DllImport(Dll, EntryPoint = "prism_registry_exists")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool RegistryExists(IntPtr ctx, ulong id);
 
         [DllImport(Dll, EntryPoint = "prism_registry_create")]
         public static extern IntPtr RegistryCreate(IntPtr ctx, ulong id);
@@ -108,6 +165,17 @@ namespace Echopunks.Speech
 
         [DllImport(Dll, EntryPoint = "prism_backend_stop")]
         public static extern PrismError BackendStop(IntPtr backend);
+
+        [DllImport(Dll, EntryPoint = "prism_backend_is_speaking")]
+        private static extern PrismError BackendIsSpeakingRaw(IntPtr backend, out byte speaking);
+
+        /// <summary>Diagnostics: "yes"/"no", or the error code when the backend can't tell.</summary>
+        public static string BackendIsSpeaking(IntPtr backend)
+        {
+            byte b;
+            var err = BackendIsSpeakingRaw(backend, out b);
+            return err == PrismError.Ok ? (b != 0 ? "yes" : "no") : err.ToString();
+        }
 
         private static byte[] Utf8(string s)
         {

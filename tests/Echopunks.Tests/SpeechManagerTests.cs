@@ -27,11 +27,13 @@ namespace Echopunks.Tests
         public SpeechManagerTests()
         {
             Environment.SetEnvironmentVariable("ECHOPUNKS_SPEECH", "auto");
+            SpeechTrace.SetEnabledForTests(false); // the default, never the dev machine's speech.trace
         }
 
         public void Dispose()
         {
             Environment.SetEnvironmentVariable("ECHOPUNKS_SPEECH", null);
+            SpeechTrace.SetEnabledForTests(null);
             SpeechManager.ResetForTests(new List<ISpeechHandler>
             {
                 new PrismHandler(), new SapiHandler(), new ClipboardHandler(),

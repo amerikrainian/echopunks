@@ -16,7 +16,12 @@ namespace Echopunks.Speech
         public bool Load() { Log.Info("[speech] clipboard handler active — text lands on the clipboard."); return true; }
         public void Unload() { }
 
-        public bool Speak(string text, bool interrupt) => SetClipboardText(text);
+        public bool Speak(string text, bool interrupt)
+        {
+            bool ok = SetClipboardText(text);
+            SpeechTrace.Line("clipboard set -> " + (ok ? "ok" : "FAILED"));
+            return ok;
+        }
         public bool Output(string text, bool interrupt) => Speak(text, interrupt);
         public void Silence() { }
 

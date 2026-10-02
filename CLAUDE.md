@@ -295,6 +295,31 @@ Host:
   `ClipboardHandler` (raw user32). Output choice: `speech.output` in
   `%LOCALAPPDATA%\Echopunks\settings.json` (flat dotted-key JSON, `src/HostConfig.cs`)
   or the `ECHOPUNKS_SPEECH` env var for dev runs; default auto.
+  `SpeechTrace` = speech diagnostics under a `[speech #n]` tag. The DETAILED trace (every
+  utterance: text, caller chain, thread, handler list by priority with states, the choice,
+  each native Ok + timing + is-speaking; SAPI's started/finished events; boot diagnostics)
+  is OFF by default in EVERY build (Debug too — user rule, 2026-10-02): enable with
+  `"speech.trace": "true"` in settings.json or `ECHOPUNKS_SPEECH_TRACE=1` (env wins, "0"
+  forces off); read once per launch, and boot logs one line saying which. ALWAYS logged:
+  the Prism version, any non-Ok native result, a rejected utterance (with its text), each
+  fallback step, what loaded SAPI, handler exceptions — and Prism's own log, rerouted via
+  prism_set_log_handler (level Info). Tests pin the flag (SetEnabledForTests) in TestSpeech
+  and the speech test classes — never the dev machine's value. Added 2026-10-02 for the
+  "NVDA and SAPI both speak, only in cutscenes" reports; found the cause on the first log.
+  PRISM = vendored **0.18.3** (`third_party/prism/`, updated 2026-10-02 from 0.16.x; ABI
+  compatible, error ordinals unchanged). THE SIMDUTF TRAP: Prism converts every string
+  with simdutf, whose AVX-512 "icelake" UTF-8→UTF-16 block (process_block_utf8_to_utf16)
+  MSVC MISCOMPILED — on AVX-512 CPUs (Tiger Lake, Zen 4: the tester's Ryzen 7840U) valid
+  text with U+2019 (cutscene apostrophes) came back InvalidUtf8 from Prism 0.16.x's NVDA
+  backend (it used the VALIDATING convert_utf8_to_utf16le), the manager fell through to
+  SAPI, and SAPI kept talking over later NVDA lines. ethindp/prism#86. Fixed in simdutf by
+  PR #1006 (2026-07-21, works around the VS bug); Prism 0.18.3 bundles that code even
+  though its header still says "9.0.0" (Prism's 2026-08-09 deps bump) — checked by
+  source, not label. NEVER downgrade below a Prism carrying that fix. If an AVX-512 user
+  ever hits a similar InvalidUtf8, the escape hatch is `SIMDUTF_FORCE_IMPLEMENTATION=fallback`
+  (scalar kernel; prism.dll honors it, and setting it in-process BEFORE prism.dll loads takes
+  effect — its static CRT snapshots the environment at DLL attach, verified 2026-10-02). It
+  was briefly set by PrismHandler, then removed as unneeded (user decision, 2026-10-02).
 - `src/Dev/` — DEBUG-only dev server (+ `/reload`); `src/Log.cs` — file logger.
 
 Module (each reload starts this half cold — statics are per-load):
