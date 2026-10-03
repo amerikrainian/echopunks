@@ -297,6 +297,19 @@ namespace Echopunks.Screens
                 OnSelect = () => ArmName(Editor),
                 OnActivate = () => CommitName(Editor),
             });
+            // The folder button right of the name (art-only, every mode): the game names it
+            // nowhere, so it speaks the drawn title of the screen it opens. Dimmed and dead
+            // while armed like the drawn one (the game's Ctrl+O stays native either way).
+            b.AddItem(ControlId.Structural("ed.browser"), new NodeVtable
+            {
+                ControlType = ControlTypes.Button,
+                Announcements = new[]
+                {
+                    new NodeAnnouncement(() => GameText.T("EXODUS Solution Browser"), kind: AnnouncementKinds.Label),
+                    ArmedUnavailable(),
+                },
+                OnActivate = OpenSolutionBrowser,
+            });
             b.AddItem(ControlId.Structural("ed.newexa"), new NodeVtable
             {
                 ControlType = ControlTypes.Button,
@@ -325,6 +338,7 @@ namespace Echopunks.Screens
                     Announcements = new[]
                     {
                         new NodeAnnouncement(() => GameText.T("SELECT OPPONENT"), kind: AnnouncementKinds.Label),
+                        ArmedUnavailable(),
                     },
                     OnActivate = OpenOpponentBrowser,
                 });
@@ -335,10 +349,34 @@ namespace Echopunks.Screens
         // home-plate draw and the battle sim read) is private; the browser takes it as a delegate.
         private static readonly MethodInfo SelectOpponentCallback = Deobf.Method(typeof(EditorScreen), "method_44");
 
+        // Both header buttons draw dimmed and ignore clicks while the sim is armed (method_2).
+        private static NodeAnnouncement ArmedUnavailable() =>
+            new NodeAnnouncement(() => Editing(Editor) ? null : Loc.T("value.unavailable"),
+                kind: AnnouncementKinds.Enabled);
+
+        private static bool RefuseWhileArmed(EditorScreen e)
+        {
+            if (Editing(e)) return false;
+            Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true);
+            return true;
+        }
+
+        private static void OpenSolutionBrowser()
+        {
+            var e = Editor;
+            if (e == null || RefuseWhileArmed(e)) return;
+            try
+            {
+                GClass45.soundsNamespace_0.sound_41.smethod_1(1f);
+                GameApi.PushScreen(new GClass253(e.solution_0));
+            }
+            catch (Exception ex) { Log.Error("[editor] solution browser open failed", ex); }
+        }
+
         private static void OpenOpponentBrowser()
         {
             var e = Editor;
-            if (e == null || SelectOpponentCallback == null) return;
+            if (e == null || SelectOpponentCallback == null || RefuseWhileArmed(e)) return;
             try
             {
                 var cb = (Action<MultiplayerOpponentInfo>)Delegate.CreateDelegate(

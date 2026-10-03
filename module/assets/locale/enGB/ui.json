@@ -211,6 +211,8 @@
   "editor.exa.other": "other EXA",
   "editor.exa.holding": "{exa} holding a file",
   "battle.notbeaten": "Not beaten",
+  "battle.opponent.close": "Close",
+  "battle.opponent.npc": "{name} NPC",
   "battle.opponent.state": "{beaten}, {changed} {date}",
   "battle.versus": "{you} versus {opponent}",
   "screen.BattleCompletionScreen": "Battle results",

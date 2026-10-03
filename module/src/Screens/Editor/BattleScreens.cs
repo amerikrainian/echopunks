@@ -10,7 +10,8 @@ namespace Echopunks.Screens
     /// <summary>The EXODUS Connection Browser (game type OpponentBrowserScreen, name-preserved) —
     /// the battle opponent picker the SELECT OPPONENT map hotspot pushes. Mouse-only in the game
     /// except Escape: rows are "name, Beaten/Not beaten, Changed date" mirroring the drawn
-    /// three-column table; Enter selects an ENABLED row via the screen's own callback + pop (the
+    /// three-column table (the NPC row's lettered badge sprite transcribed after its name), plus
+    /// the art-only close X; Enter selects an ENABLED row via the screen's own callback + pop (the
     /// exact click path); Steam rows stay unavailable until the NPC is beaten (the game's dim).
     /// Escape stays native (the game pops itself).</summary>
     public sealed class OpponentBrowserGameScreen : Screen
@@ -63,6 +64,17 @@ namespace Echopunks.Screens
                 });
             }
             b.PopContext();
+            // The art-only X at the panel's top-right corner (the game's click = a plain pop;
+            // Escape does the same natively).
+            b.AddItem(ControlId.Structural("ob.close"), new NodeVtable
+            {
+                ControlType = ControlTypes.Button,
+                Announcements = new[]
+                {
+                    new NodeAnnouncement(() => Loc.T("battle.opponent.close"), kind: AnnouncementKinds.Label),
+                },
+                OnActivate = () => GameApi.PopScreen(),
+            });
         }
 
         private static string OpponentName(MultiplayerOpponentInfo info, Puzzle puzzle)
@@ -72,7 +84,9 @@ namespace Echopunks.Screens
                 if (info.maybe_0.method_0())
                     return Steamworks.SteamFriends.GetFriendPersonaName(info.maybe_0.method_2());
                 var meta = PuzzleDetailsMethod?.Invoke(null, new object[] { puzzle }) as GClass361;
-                return meta == null ? null : Vignette.dictionary_0[meta.vignetteCharacter_0].Replace("\\", "");
+                if (meta == null) return null;
+                // The NPC row's name is followed by a lettered "NPC" badge sprite.
+                return Loc.T("battle.opponent.npc", new { name = Vignette.dictionary_0[meta.vignetteCharacter_0].Replace("\\", "") });
             }
             catch { return null; }
         }

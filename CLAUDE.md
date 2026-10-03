@@ -991,8 +991,11 @@ so it speaks "blank, {opponent}" / "blank, {host}" under the both-blank connecto
 (PB028; PB019 re-verified 2026-09-06: the corridor is visibly where the opponent enters
 the network). SELECT OPPONENT (mouse-only hotspot)
 is a battle-only solution-stop button pushing OpponentBrowserScreen (modeled in
-BattleScreens.cs — rows "name, Beaten/Not beaten, Changed date"; Steam rows
-unavailable until the NPC falls). Battles end at BattleCompletionScreen (modeled:
+BattleScreens.cs — rows "name, Beaten/Not beaten, Changed date", the NPC row's lettered
+badge sprite transcribed "{name} NPC", plus a Close row for the art-only X; Steam rows =
+friends' UPLOADED solutions from the {puzzle}.SOLUTIONS Steam leaderboard (none uploaded
+= the lone NPC row), unavailable until the NPC falls). Both it and the solution-stop
+browser button speak "unavailable" while armed (the game dims both, clicks dead). Battles end at BattleCompletionScreen (modeled:
 result heading as screen name, title, "{you} versus {opponent}", W/D/L, Your Rating —
 the badge is lettered sprite art, transcribed N/A + C (51-59) / B (60-79) / A (80-94)
 / S (95-99) / S+ (100) mirroring the draw's ternary — the win-gated upload notice,
@@ -1034,7 +1037,8 @@ force-loadable via public smethod_0; the font transcribes to " A-Z 0-9 . ? !" by
 index; unmatched = "custom shape, N pixels"; ", depth z" only in 3D; nothing Live —
 pause to orient). Real gamepads feed the pad natively — zero key conflicts.
 
-**Solution browser** (deob GClass253, obfuscated live; Ctrl+O/folder button;
+**Solution browser** (deob GClass253, obfuscated live; Ctrl+O/folder button — the
+latter an art-only solution-stop button labeled with the browser's own drawn title;
 SolutionBrowserScreen.cs, all modes): rows = SolutionManager.smethod_3(puzzle) with
 the drawn per-mode stats (sandbox Size = solution.int_1 + "{0} EXAS"/"1 EXA"; battle
 WINS = int_0; normal Cycles/Size/Activity from solution.dictionary_0 else "Unsolved");
