@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.9
+
+- Solution stop now includes solution browser button.
+
 ## V0.1.8
 
 - Fixed false fallback to SAPI occurring on some users' machines
