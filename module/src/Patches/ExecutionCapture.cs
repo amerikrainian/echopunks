@@ -100,6 +100,19 @@ namespace Echopunks.Patches
                 Log.Info("[execlog] insurance cap shed " + Store.DroppedCycles + " oldest cycles last run");
             Store.Clear();
             _lines.Clear();
+            _lastEffects.Clear();
+        }
+
+        // The visible enemy/NPC effect rows of the most recent cycle, for the step echo's "All
+        // EXAs" scope (StepEchoScope) — a stepped cycle's rows, read on the tick after the step.
+        private static readonly List<string> _lastEffects = new List<string>();
+
+        public static IReadOnlyList<string> LastCycleEffects => _lastEffects;
+
+        private static void Effect(int test, int cycle, string text)
+        {
+            Store.Add(test, cycle, text);
+            _lastEffects.Add(text);
         }
 
         private static void ExecutePrefix(Sim __instance, SimExa __0)
@@ -189,6 +202,7 @@ namespace Echopunks.Patches
                 try { mine = editor.method_24(); } catch { return; }
                 _snapEnemies.Clear();
                 _snapFiles.Clear();
+                _lastEffects.Clear();
                 foreach (var entity in __instance.list_1)
                 {
                     var exa = entity as SimExa;
@@ -249,7 +263,7 @@ namespace Echopunks.Patches
                         // NPC spawn. (Round/test starts build a FRESH sim, so the starting
                         // lineup is always in the snapshot and never logs.)
                         if (!Hidden(host))
-                            Store.Add(test, cycle, Loc.T("editor.execlog.appeared", new
+                            Effect(test, cycle, Loc.T("editor.execlog.appeared", new
                             {
                                 exa = ExaEditorScreen.ExaDisplayName(exa),
                                 host = ExaEditorScreen.HostName(host),
@@ -257,7 +271,7 @@ namespace Echopunks.Patches
                         continue;
                     }
                     if (!ReferenceEquals(host, snap.Host) && !(Hidden(host) && Hidden(snap.Host)))
-                        Store.Add(test, cycle, Loc.T("editor.execlog.moved", new
+                        Effect(test, cycle, Loc.T("editor.execlog.moved", new
                         {
                             exa = ExaEditorScreen.ExaDisplayName(exa),
                             from = ExaEditorScreen.HostName(snap.Host),
@@ -265,7 +279,7 @@ namespace Echopunks.Patches
                         }));
                     var held = HeldFile(exa);
                     if (held != null && !ReferenceEquals(held, snap.Held) && !Hidden(host))
-                        Store.Add(test, cycle, _snapFiles.Contains(held)
+                        Effect(test, cycle, _snapFiles.Contains(held)
                             ? Loc.T("editor.execlog.grabbed", new
                             {
                                 exa = ExaEditorScreen.ExaDisplayName(exa),
@@ -280,7 +294,7 @@ namespace Echopunks.Patches
                     // A held file gone from the sim entirely was WIPEd in hand — invisible.
                     if (snap.Held != null && held == null && _curFiles.Contains(snap.Held)
                         && !Hidden(host))
-                        Store.Add(test, cycle, Loc.T("editor.execlog.dropped", new
+                        Effect(test, cycle, Loc.T("editor.execlog.dropped", new
                         {
                             exa = ExaEditorScreen.ExaDisplayName(exa),
                             host = ExaEditorScreen.HostName(host),
@@ -304,7 +318,7 @@ namespace Echopunks.Patches
                                 .vmethod_9(kv.Key, false, mine, false).method_2(true);
                         }
                         catch { }
-                        Store.Add(test, cycle, Loc.T("editor.execlog.wrote", new
+                        Effect(test, cycle, Loc.T("editor.execlog.wrote", new
                         {
                             exa = ExaEditorScreen.ExaDisplayName(kv.Value),
                             host = ExaEditorScreen.HostName(host),
@@ -325,7 +339,7 @@ namespace Echopunks.Patches
                         if (!pair.maybe_0.method_0()) continue; // pose with no victim
                         var host = killer.method_0();
                         if (Hidden(host)) continue;
-                        Store.Add(test, cycle, Loc.T("editor.execlog.killed", new
+                        Effect(test, cycle, Loc.T("editor.execlog.killed", new
                         {
                             exa = ExaEditorScreen.ExaDisplayName(killer),
                             host = ExaEditorScreen.HostName(host),
@@ -348,7 +362,7 @@ namespace Echopunks.Patches
                     // unless the file left the sim with it.
                     var dropped = kv.Value.Held;
                     if (dropped != null && !_curFiles.Contains(dropped)) dropped = null;
-                    Store.Add(test, cycle, dropped != null
+                    Effect(test, cycle, dropped != null
                         ? Loc.T("editor.execlog.died.file", new
                         {
                             exa = ExaEditorScreen.ExaDisplayName(exa),

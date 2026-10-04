@@ -193,7 +193,7 @@ namespace Echopunks.Screens
                 // Announce from cycle 0 too: the first step arms the sim paused, and hearing the
                 // PENDING instruction ("Cycle 0. XA: LINK 800") is the point of stepping.
                 if (_lastCycle >= 0 || cycles == 0)
-                    Speech.Tts.Speak(StepNarration(e, cycles), interrupt: true);
+                    SpeakStep(e, cycles);
                 _lastCycle = cycles;
             }
 
@@ -211,7 +211,7 @@ namespace Echopunks.Screens
                     {
                         _stepEcho = true;
                         _lastCycle = cycles;
-                        Speech.Tts.Speak(StepNarration(e, cycles), interrupt: true);
+                        SpeakStep(e, cycles);
                     }
                     _runToLine = 0;
                     _suppressRunAnnounce = false;
@@ -251,9 +251,18 @@ namespace Echopunks.Screens
         private string _refocusLog; // log stop to re-enter once its store refills (see arming)
         private int _refocusTtl;
 
-        // "Cycle 3. XA: LINK 800" — the next instruction of the code-focused EXA (or the first
+        // "Cycle 3", "XA: LINK 800" (two entries) — the next instruction of the code-focused EXA (or the first
         // live player EXA), read from the macro-expanded source that actually executes.
-        private string StepNarration(EditorScreen e, int cycle)
+        // One speech entry per event: the first interrupts (it arrived on a press), the rest
+        // queue behind it — never one mashed-together string.
+        private void SpeakStep(EditorScreen e, int cycle)
+        {
+            var entries = StepEchoScope.All ? StepNarrationAll(e, cycle) : StepNarration(e, cycle);
+            for (int i = 0; i < entries.Count; i++)
+                Speech.Tts.Speak(entries[i], interrupt: i == 0);
+        }
+
+        private System.Collections.Generic.List<string> StepNarration(EditorScreen e, int cycle)
         {
             string detail = null;
             try
@@ -290,8 +299,45 @@ namespace Echopunks.Screens
                 }
             }
             catch { }
-            string cycleText = Loc.T("editor.cycle", new { n = cycle });
-            return detail == null ? cycleText : cycleText + ". " + detail;
+            var parts = new System.Collections.Generic.List<string> { Loc.T("editor.cycle", new { n = cycle }) };
+            if (detail != null) parts.Add(detail);
+            return parts;
+        }
+
+        // The "All EXAs" step scope (Mod tab), one entry each: first what the other side VISIBLY
+        // did in the cycle just stepped (the exec log's effect rows — enemy code stays unspoken),
+        // then "Cycle n", then every live player EXA's pending instruction, in the drawn window
+        // order (program list index, then creation — each REPL copy right after its parent).
+        // Hidden-host occupants have no window, so they stay out like everywhere else.
+        private System.Collections.Generic.List<string> StepNarrationAll(EditorScreen e, int cycle)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (cycle > 0) parts.AddRange(Patches.ExecutionCapture.LastCycleEffects);
+            parts.Add(Loc.T("editor.cycle", new { n = cycle }));
+            try
+            {
+                var sim = TheSim(e);
+                Team mine = e.method_24();
+                var programs = e.solution_0.list_0;
+                var live = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<long, SimExa>>();
+                if (sim != null)
+                    foreach (var entity in sim.list_1)
+                    {
+                        var exa = entity as SimExa;
+                        if (exa == null || !exa.maybe_2.method_0() || exa.team_0 != mine) continue;
+                        try { if (HostHidden(exa.method_0(), false)) continue; } catch { }
+                        long order = 0;
+                        try { order = ((long)programs.IndexOf(exa.maybe_2.method_2()) << 32) + exa.entityDisplayRank_0.int_1; } catch { }
+                        live.Add(new System.Collections.Generic.KeyValuePair<long, SimExa>(order, exa));
+                    }
+                foreach (var kv in System.Linq.Enumerable.OrderBy(live, p => p.Key))
+                {
+                    string line = PendingInstruction(kv.Value);
+                    if (line != null) parts.Add(kv.Value.string_0 + ": " + line);
+                }
+            }
+            catch { }
+            return parts;
         }
 
         // Goal-state flips while the sim runs: every flip lands in the test log; live speech is

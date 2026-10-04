@@ -22,13 +22,14 @@ The full player manual is [docs/echopunks manual.html](docs/echopunks%20manual.h
 | Space | Read the game's own tooltip for the focused item, when it has one |
 | Escape | Back / close / leave — handled by the game itself |
 | F6 | Toggle typing echo in text fields ("Echo characters" / "Echo off"); deleted characters are always spoken, and the choice is remembered |
+| Ctrl+F2 | Switch step narration between Focused EXA and All EXAs |
 
 ### EXA editor
 
 | Key | What it does |
 |---|---|
 | Alt+1 to Alt+6 | Jump to the task, EXA windows, hosts, code, test log (errors and goals completed or failed) or solution section; "unavailable" when that section isn't there right now |
-| F2 | Step the simulation one cycle (hold to repeat) |
+| F2 | Step the simulation one cycle (hold to repeat). Reads the cycle and the focused EXA's next instruction; with step narration on All EXAs, first what other EXAs visibly did, then the cycle and every one of your EXAs' next instruction |
 | F3 / F4 / F5 | Pause / run / fast-forward  |
 | F1 | Open the goal view as a readable popup (game key; also the Show Goal button) |
 | F8 | Run to the caret's line — stops when any copy of that program reaches it |

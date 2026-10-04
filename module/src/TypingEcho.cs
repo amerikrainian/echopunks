@@ -24,9 +24,16 @@ namespace Echopunks
 
         public static void Toggle()
         {
-            _enabled = !Enabled;
-            HostConfig.SetBool(Key, _enabled.Value);
+            Set(!Enabled);
             Speech.Tts.Speak(Loc.T(_enabled.Value ? "text.echo.on" : "text.echo.off"), interrupt: true);
+        }
+
+        /// <summary>Silent set + persist (the control panel's Mod tab; its radios speak their own state).</summary>
+        public static void Set(bool enabled)
+        {
+            if (_enabled == enabled) return;
+            _enabled = enabled;
+            HostConfig.SetBool(Key, enabled);
         }
 
         /// <summary>Test seam: pin the flag without touching settings.json (null = re-read it on

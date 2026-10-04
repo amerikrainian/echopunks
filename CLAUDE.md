@@ -436,6 +436,18 @@ key bubbling can't swallow them. SELECTION-FOLLOWS-FOCUS: a node with `NodeVtabl
   keys are up — it binds the first HELD key, which would otherwise be our Enter), the
   keyboard-reference table, and `GameKeyCaptureScreen` (CapturesRawInput, layer 10)
   over the game's capture overlay. Native mouse + Escape handling untouched throughout.
+  THE MOD TAB (2026-10-04, `Patches/OptionsInjection.cs` + `ModOptions.cs`): the Options page
+  gets a fifth tab drawn with the game's OWN immediate-mode widgets — a prefix on the panel's
+  private tab-strip helper method_0 swaps its static 4-label array (locString_0, matched by
+  reference so the Controls strip is untouched) for a 5-label copy and narrows the width so the
+  strip keeps its span; the game then draws/hovers/click-selects tab int_0 = 4 itself. Its page
+  switch has no case 4, so a postfix on method_0 (the call right before the switch — identical
+  draw order) draws the rows via method_1 (label boxes) and method_2 (radios; clicks play
+  sound_44 like method_3). ONE list (`ModOptions.Rows`) feeds both the drawn tab and the spoken
+  model. Rows: Character Echo (game "Enable"/"Disable" → TypingEcho.Set, the F6 key's setting)
+  and Step Narration (Focused EXA / All EXAs → `StepEchoScope`, settings.json
+  "editor.stepEcho" = focused|all). Screenshot-verified layout: two rows of weight 1, radios in
+  the game's two option columns (x 1734 / 2151), centered in their boxes.
 - `module/src/Screens/DesktopScreens.cs` — the desktop hub (`DesktopHubScreen`, see
   "Desktop decoded"): four Tab stops — organizer task list (rows ENUMERATED live from
   the campaign lists, the first place the WotR items-from-collections pattern applies;
@@ -746,7 +758,14 @@ VIEWING-TEAM EXAs only, like every code surface (the fallback once slid to the f
 live EXA of ANY team: with the player's EXAs all dead it read the OPPONENT's pending
 instruction under its raw name — PB022 leak, fixed 2026-08-29; with no live player
 EXA the echo is a bare "Cycle n", enemy moves stay exec-log effect rows);
-run/stop transitions announce ("Running." / "Stopped at cycle n."). The Test Run row is
+run/stop transitions announce ("Running." / "Stopped at cycle n."). STEP SCOPE (Mod tab,
+`StepEchoScope`): "All EXAs" speaks the previous cycle's VISIBLE enemy/NPC effect rows first
+(ExecutionCapture.LastCycleEffects — the exec log's effect rows of the last cycle, cleared at
+each cycle prefix), then "Cycle n" + every live viewing-team EXA's pending instruction in window
+order (hidden-host occupants excluded); enemy CODE stays unspoken. One speech entry per
+event (first interrupts, rest queue) in both scopes. Ctrl+F2 (global ui.stepScope, handled in
+Navigation.DispatchJustPressed beside F6) flips the scope and speaks "Step Narration, {choice}". Verified on KGOG-TV
+(battle-1) 2026-10-04. The Test Run row is
 an adjustable slider (arrows; PgUp/PgDn = the coarse step — every slider takes
 ui.pageUp/Down → OnAdjust large) whose Enter opens the game's inline typed field.
 

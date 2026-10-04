@@ -130,6 +130,10 @@ namespace Echopunks
                     .AddBinding(jumpKeys[i], alt: true);
             // Typing echo on/off (the game reads no F6). Handled in Navigation, ahead of any screen.
             Input.InputManager.Register("ui.echo", "Toggle typing echo", Input.InputCategory.UI).AddBinding(Input.Scancode.F6);
+            // Step narration scope (Focused EXA / All EXAs) — a chord on the step key so it can't
+            // be hit by accident (exact-match modifiers: plain F2 still steps). Global like F6.
+            Input.InputManager.Register("ui.stepScope", "Toggle step narration scope", Input.InputCategory.UI)
+                .AddBinding(Input.Scancode.F2, ctrl: true);
 
             Input.InputManager.ActiveCategoriesProvider = () =>
                 new System.Collections.Generic.List<Input.InputCategory>(Screens.ScreenManager.ActiveInputCategories());
@@ -158,6 +162,7 @@ namespace Echopunks
                 Patches.CutsceneAdvance.Apply(_harmony);    // one press = the next cutscene line (after suppression: it forces keys through that seam)
                 Patches.PanelCapture.IsHostName = Screens.ExaEditorScreen.IsSpokenHostName;
                 Patches.PanelCapture.Apply(_harmony);       // special-puzzle panel text + goal-view force
+                Patches.OptionsInjection.Apply(_harmony);   // the control panel's Mod tab (game widgets)
                 Screens.CutsceneNotes.Apply();              // Moss's EXODUS recollection in the Ghast visit (campaign lists exist post-init)
             }
             // Ticks only run after game init, so this can never talk over the boot prompt.

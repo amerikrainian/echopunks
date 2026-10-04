@@ -21,6 +21,7 @@ namespace Echopunks.UI
             // Global, ahead of the navigator: a caret-owning text node bubbles most keys to the
             // game, and a text field is exactly where the echo toggle is wanted.
             if (action.Key == "ui.echo") { TypingEcho.Toggle(); return true; }
+            if (action.Key == "ui.stepScope") { StepEchoScope.Toggle(); return true; }
             return Active != null && Active.OnInputJustPressed(action);
         }
 

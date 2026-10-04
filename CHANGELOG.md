@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.2.1
+
+- Add a proper settings screen.
+- You can now choose whether all events or only those concerning the currently focused EXA are read out to you. As a consequence, enemy actions will read out before the cycle number, since they already happened. Toggle this with Ctrl+F2.
+
 ## V0.2.0
 
 - Add user documentation for screen layouts.

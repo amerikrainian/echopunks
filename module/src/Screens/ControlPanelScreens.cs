@@ -180,24 +180,20 @@ namespace Echopunks.Screens
         }
 
         /// <summary>0 = home, 1 = Options, 2 = Controls; -1 when the panel isn't up.</summary>
-        public static int Page
+        public static int Page => PageOf(Panel);
+
+        public static int Tab => TabOf(Panel);
+
+        public static int PageOf(ControlPanelScreen p)
         {
-            get
-            {
-                var p = Panel;
-                if (p == null || PageField == null) return -1;
-                try { return Convert.ToInt32(PageField.GetValue(p)); } catch { return -1; }
-            }
+            if (p == null || PageField == null) return -1;
+            try { return Convert.ToInt32(PageField.GetValue(p)); } catch { return -1; }
         }
 
-        public static int Tab
+        public static int TabOf(ControlPanelScreen p)
         {
-            get
-            {
-                var p = Panel;
-                if (p == null || TabField == null) return -1;
-                try { return (int)TabField.GetValue(p); } catch { return -1; }
-            }
+            if (p == null || TabField == null) return -1;
+            try { return (int)TabField.GetValue(p); } catch { return -1; }
         }
 
         /// <summary>Exactly what the game's page buttons do: assign the fields (page flips reset the tab).</summary>
@@ -239,7 +235,8 @@ namespace Echopunks.Screens
         }
     }
 
-    /// <summary>Page 1: Options — Display / Sound / Interface / Network tabs.</summary>
+    /// <summary>Page 1: Options — Display / Sound / Interface / Network tabs, plus the mod's own Mod
+    /// tab (drawn by Patches/OptionsInjection with the game's widgets).</summary>
     public sealed class ControlPanelOptionsScreen : ControlPanelPageScreen
     {
         public ControlPanelOptionsScreen() : base(1) { }
@@ -252,7 +249,8 @@ namespace Echopunks.Screens
                 ("tab.display", () => GameText.T("Display"), 0),
                 ("tab.sound", () => GameText.T("Sound"), 1),
                 ("tab.interface", () => GameText.T("Interface"), 2),
-                ("tab.network", () => GameText.T("Network"), 3));
+                ("tab.network", () => GameText.T("Network"), 3),
+                ("tab.mod", () => Loc.T("panel.tab.mod"), Patches.OptionsInjection.ModTab));
 
             b.BeginStop("content");
             switch (PanelState.Tab)
@@ -261,8 +259,23 @@ namespace Echopunks.Screens
                 case 1: BuildSound(b); break;
                 case 2: BuildInterface(b); break;
                 case 3: BuildNetwork(b); break;
+                case Patches.OptionsInjection.ModTab: BuildMod(b); break;
             }
             BackButton(b);
+        }
+
+        // The mod's own settings (ModOptions — the same list the drawn Mod tab renders).
+        private static void BuildMod(GraphBuilder b)
+        {
+            foreach (var row in ModOptions.Rows)
+            {
+                b.PushContext(row.Label());
+                b.StartRow("opts");
+                foreach (var opt in row.Options)
+                    Radio(b, "mod." + opt.Id, opt.Label, opt.Selected, opt.Select);
+                b.EndRow();
+                b.PopContext();
+            }
         }
 
         private static void BuildDisplay(GraphBuilder b)

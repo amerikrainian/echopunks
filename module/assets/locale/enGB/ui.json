@@ -283,6 +283,11 @@
   "screen.controlpanel": "Control panel",
   "panel.close": "Close control panel",
   "panel.clock": "Clock",
+  "panel.tab.mod": "Mod",
+  "modopt.echo": "Character Echo",
+  "modopt.step": "Step Narration",
+  "modopt.step.focused": "Focused EXA",
+  "modopt.step.all": "All EXAs",
 
   "controls.gamepad": "Redshift gamepad bindings",
   "controls.reference": "Keyboard reference",
