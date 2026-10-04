@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.2.0
+
+- Add user documentation for screen layouts.
+
 ## V0.1.9
 
 - Solution stop now includes solution browser button.
