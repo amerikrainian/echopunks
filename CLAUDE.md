@@ -177,7 +177,8 @@ still cannot build the module.
 A Debug build deploys into the game folder: `Echopunks.dll`, `Echopunks.Module.dll`,
 `Mono.Cecil.dll` (the remapper), `0Harmony.dll`, `prism.dll` (native screen-reader
 bridge), `EXAPUNKS.exe.config`, `Mono.CSharp.dll` (dev REPL), `Echopunks\namemap.tsv`
-+ `Echopunks\locale\` + `Echopunks\docs\` (the zine text documents from repo `docs/game/`),
++ `Echopunks\locale\` + `Echopunks\docs\` (the zine text documents from repo `docs/game/`)
++ `Echopunks\echopunks manual.html` (the player manual, repo `docs/echopunks manual.html`),
 writes `steam_appid.txt`, and deletes any stale pre-DLL `Echopunks.exe`.
 The HOST dll copy needs the game closed (file-locked; the deploy warns and continues);
 the MODULE dll deploys fine with the game running — that's the hot-reload loop.
@@ -191,7 +192,7 @@ belongs there — grow the suite with each subsystem.
 User install (the future installer) = copy 7 files into the game folder —
 `EXAPUNKS.exe.config`, `Echopunks.dll`, `Echopunks.Module.dll`, `Mono.Cecil.dll`,
 `0Harmony.dll`, `prism.dll`, `steam_appid.txt` — plus the `Echopunks\` folder
-(`namemap.tsv` + `locale\` + `docs\`). Uninstall = delete the config. (namemap.tsv ships name
+(`namemap.tsv` + `locale\` + `docs\` + `echopunks manual.html`). Uninstall = delete the config. (namemap.tsv ships name
 pairs only — the same information our ordinals always encoded; no game code ships.) The config binds the
 host assembly by **full display name**, so the host's `AssemblyVersion` is pinned at
 **1.0.0.0** in its csproj — bump both in lockstep or the mod silently stops loading

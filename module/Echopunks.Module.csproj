@@ -98,6 +98,8 @@
     </ItemGroup>
     <Copy SourceFiles="@(DocFiles)" DestinationFolder="$(GameDir)\Echopunks\docs" />
     <Copy SourceFiles="@(DocImages)" DestinationFolder="$(GameDir)\Echopunks\docs\images" />
+    <!-- The player manual: top of the mod folder, the same place build_release.ps1 stages it. -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\docs\echopunks manual.html" DestinationFolder="$(GameDir)\Echopunks" />
     <Message Importance="high" Text="Echopunks.Module + locale + docs deployed to $(GameDir)" />
   </Target>
 

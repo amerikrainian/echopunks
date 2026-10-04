@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echopunks Manual</title>
+<style>
+:root { --bg:#fbfaf7; --fg:#1d1d1f; --muted:#5b5b60; --accent:#a3261c; --rule:#d9d6cf; --code-bg:#f0eee8; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161617; --fg:#e8e6e1; --muted:#a3a19b; --accent:#ff7a6b; --rule:#3a3936; --code-bg:#222221; } }
+* { box-sizing: border-box; }
+body { background:var(--bg); color:var(--fg); font:18px/1.6 Georgia, "Times New Roman", serif; margin:0; padding:0 16px 4rem; }
+main { max-width:46rem; margin:0 auto; }
+header.doc { border-bottom:3px solid var(--accent); margin:2rem 0 1rem; padding-bottom:1rem; }
+h1 { font:800 2.2rem/1.1 Helvetica, Arial, sans-serif; margin:0 0 .4rem; }
+h2 { font:700 1.6rem/1.2 Helvetica, Arial, sans-serif; margin:3rem 0 .5rem; padding-top:1.5rem; border-top:1px solid var(--rule); }
+h3 { font:700 1.25rem/1.3 Helvetica, Arial, sans-serif; margin:2rem 0 .5rem; }
+.doc-info { color:var(--muted); font-family:Helvetica, Arial, sans-serif; margin:0; }
+a { color:var(--accent); }
+code, kbd, pre { font-family:Menlo, Consolas, monospace; font-size:.9em; }
+kbd, code { background:var(--code-bg); padding:.05rem .3rem; border-radius:3px; }
+pre { background:var(--code-bg); padding:.8rem 1rem; overflow-x:auto; line-height:1.45; border-radius:4px; }
+table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.95rem; }
+th, td { border:1px solid var(--rule); padding:.4rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--code-bg); font-family:Helvetica, Arial, sans-serif; }
+.table-wrap { overflow-x:auto; }
+blockquote { margin:1rem 0; padding:.2rem 1rem; border-left:4px solid var(--rule); color:var(--muted); }
+nav ol { padding-left:1.4rem; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="doc">
+<h1>Echopunks Manual</h1>
+</header>
+
+<nav aria-labelledby="toc">
+<h2 id="toc">Contents</h2>
+<ol>
+<li><a href="#before">A Note Before Starting</a></li>
+<li><a href="#basics">Groups and items</a></li>
+<li><a href="#room">The room</a></li>
+<li><a href="#desktop">The desktop</a></li>
+<li><a href="#editor">The EXA editor</a></li>
+<li><a href="#extras">Everything else on the desktop</a></li>
+<li><a href="#keys">Key reference</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ol>
+</nav>
+
+<h2 id="before">1. A Note Before Starting</h2>
+
+<p>Turn off the Steam overlay for EXAPUNKS (hit manage on the game in your Steam library, Properties,
+General, uncheck "Enable the Steam Overlay while in-game"). It steals focus and keystrokes.</p>
+
+<h2 id="basics">2. Groups and items</h2>
+<p>Every screen the mod understands is laid out the same way, and once you have this, you have
+most of the mod:</p>
+<ul>
+<li>A screen is a row of <strong>groups</strong> (also call them stops). <kbd>Tab</kbd> moves to
+the next group, <kbd>Shift+Tab</kbd> to the previous one. When you land on a group, you hear its
+name and then the item you're on.</li>
+<li>Inside a group, <kbd>Up</kbd> and <kbd>Down</kbd> walk the items. <kbd>Home</kbd> and
+<kbd>End</kbd> jump to the first and last. Where items sit side by side (tabs, a row of buttons, a
+grid), <kbd>Left</kbd> and <kbd>Right</kbd> move along the row.</li>
+<li><kbd>Enter</kbd> activates the item: presses the button, opens the task, picks the card.</li>
+<li><kbd>Backspace</kbd> is the secondary action, where there is one: delete a solution, delete an
+EXA, put a card back, close a popup.</li>
+<li><kbd>Space</kbd> reads the game's own tooltip for the item, if the game has one.</li>
+<li>Some longer groups are split into regions (a chat log versus the user list, cycles in a log).
+<kbd>Ctrl+Up</kbd> and <kbd>Ctrl+Down</kbd> jump between regions.</li>
+</ul>
+<p>The mod remembers where you were in each group, so tabbing away and back puts you on the same
+item.</p>
+
+<h2 id="room">3. The room</h2>
+<p>The title screen is your room, with a couple of things you can use: the computer (SAWAYAMA Z7
+TurboLance), which takes you to the desktop where the game lives, and the tablet (TEC Constellation
+II), which is the control panel (settings). Later in the story a third item, TRASH WORLD NEWS,
+joins them.</p>
+
+<h2 id="desktop">4. The desktop</h2>
+
+<p>The desktop is the game's hub. Here's some of the groups found on it.</p>
+<ol>
+<li><strong>AXIOM PERSONAL ORGANIZER</strong>: your task list.</li>
+<li><strong>Task details</strong>: the selected task's title, date, description, location or
+network, and action buttons.</li>
+<li><strong>CHATSUBO</strong>: the chat window. No, you can't actually reply to these nice folks.</li>
+<li><strong>Programs</strong>: You'll just have to see what shows up here as you go through the game.</li>
+</ol>
+
+<h2 id="editor">5. The EXA editor</h2>
+
+<h3 id="editor-layout">5.1. The layout</h3>
+<p><kbd>Tab</kbd> goes through these groups in this order. Empty groups are skipped.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Group</th><th scope="col">What's in it</th><th scope="col">Shortcut</th></tr></thead>
+<tbody>
+<tr><td>Task</td><td>The task description, the goal checklist, and the Show Goal button.</td><td><kbd>Alt+1</kbd></td></tr>
+<tr><td>Windows</td><td>Your EXAs, then file windows.</td><td><kbd>Alt+2</kbd></td></tr>
+<tr><td>Hosts</td><td>One row per host, with who's standing in it.</td><td><kbd>Alt+3</kbd></td></tr>
+<tr><td><em>Host</em> links</td><td>Links leaving the host selected in Hosts.</td><td></td></tr>
+<tr><td><em>Host</em> files</td><td>Files in the selected host.</td><td></td></tr>
+<tr><td><em>Host</em> registers</td><td>Hardware registers in the selected host, with live values.</td><td></td></tr>
+<tr><td>Problems</td><td>Compile errors.</td><td></td></tr>
+<tr><td>Code</td><td>The code of the EXA you're editing, announced by its name.</td><td><kbd>Alt+4</kbd></td></tr>
+<tr><td>Scores</td><td>Test Run slider, Cycles, Size, Activity.</td><td></td></tr>
+<tr><td>Simulation</td><td>Step, Run, Fast-forward, Pause, Reset.</td><td></td></tr>
+<tr><td>Test log</td><td>After a run: errors and goal changes, by test run.</td><td><kbd>Alt+5</kbd></td></tr>
+<tr><td>Go to cycle</td><td>Jump the execution log to a cycle.</td><td></td></tr>
+<tr><td>Execution log</td><td>After a run: every instruction executed, by cycle.</td><td></td></tr>
+<tr><td>Solution</td><td>Solution name, EXODUS Solution Browser, EXA program count, Create New EXA.</td><td><kbd>Alt+6</kbd></td></tr>
+</tbody>
+</table>
+</div>
+<p>Links, files and registers always follow the host selected in Hosts: arrow to a host, then
+<kbd>Tab</kbd> forward to see what's in it. A puzzle with special hardware (a sign, for example)
+adds its group next to its host.</p>
+
+<h3 id="editor-network">5.2. Reading a network</h3>
+<p>Consider five hosts:</p>
+<ul>
+<li>YOU, with link 800 to A.</li>
+<li>A, with link -1 back to YOU, link 800 to B, and link 801 to D.</li>
+<li>B, with link -1 back to A and link 800 to C.</li>
+<li>C and D, with no further links.</li>
+</ul>
+<p>Go to Hosts, arrow to A, and <kbd>Tab</kbd> once. You're in "A links":</p>
+<pre>-1, YOU
+800, B
+801, D</pre>
+<p><kbd>Enter</kbd> on "800, B" travels the link, as if you'd run <code>LINK 800</code>: B becomes
+the selected host and you're now in "B links". So:</p>
+<ul>
+<li><code>LINK 800</code>, <code>LINK 800</code> puts you at B.</li>
+<li><code>LINK 800</code>, <code>LINK 801</code> puts you at D, and you're stuck there.</li>
+<li><code>LINK 800</code>, <code>LINK 800</code>, <code>LINK 800</code> puts you at C, stuck again.</li>
+</ul>
+<p>On links and hosts you'll also hear:</p>
+<ul>
+<li><strong>"One way"</strong>: no link back from the other side.</li>
+<li><strong>"blank"</strong> instead of a number: the connection is drawn with an empty number plate.</li>
+<li><strong>"locked"</strong>: the connection is drawn but closed for now.</li>
+<li><strong>"Unnamed host 4"</strong>: a host drawn without a name, numbered by its position in Hosts.</li>
+</ul>
+
+<h3 id="editor-windows">5.3. Windows</h3>
+<p>An EXA row reads its name, host and registers; while running, also its next instruction and any
+error. <code>REPL</code> copies get their own rows ("XA:1") after their parent.
+<kbd>Right</kbd> from an EXA goes to its M-bus toggle, then its Name field (yes, only two characters).</p>
+<ul>
+<li><kbd>Enter</kbd>: open the EXA's code.</li>
+<li><kbd>Backspace</kbd>: delete the EXA.</li>
+<li><kbd>Shift+Up</kbd>/<kbd>Shift+Down</kbd>: move the EXA in the list. The order decides who goes
+first when EXAs compete in the same cycle.</li>
+</ul>
+<p><kbd>Enter</kbd> on a file row, here or in a host, opens its values one per line.
+<kbd>Escape</kbd> or <kbd>Backspace</kbd> closes it.</p>
+
+<h3 id="editor-code">5.4. Writing code</h3>
+<p>The Code group is a normal text field. Lines are limited to 24 characters (not my choice). <kbd>Ctrl+Up</kbd>/<kbd>Ctrl+Down</kbd> switch to the previous or next EXA's
+program, and <kbd>Ctrl+Enter</kbd> creates a new EXA. <kbd>Tab</kbd> leaves the field.</p>
+<p>Compile errors appear in the Problems group; <kbd>Enter</kbd> on one puts the cursor on its
+line.</p>
+
+<h3 id="editor-running">5.5. Running and stepping</h3>
+<ul>
+<li><kbd>F2</kbd>: step one cycle. It reads the cycle and what each EXA is about to
+do: "Cycle 4. XA: LINK 800".</li>
+<li><kbd>F3</kbd>: pause. <kbd>F4</kbd>: run. <kbd>F5</kbd>: fast-forward.</li>
+<li><kbd>Escape</kbd>: reset the run.</li>
+</ul>
+<p>Stepping speaks every error and goal change. A free run speaks only goal failures; the rest is in
+the logs.</p>
+
+<h3 id="editor-registers">5.6. Checking registers</h3>
+<p>Outside text fields, <kbd>X</kbd>, <kbd>T</kbd>, <kbd>F</kbd> and <kbd>M</kbd> read that
+register of the focused EXA: the one whose window row you're on, otherwise the one whose code you
+were last in.</p>
+
+<h3 id="editor-cursor">5.7. Following execution</h3>
+<p>While running, the code field is read-only: arrows read lines, and the line an EXA is about to
+execute is marked "current". <kbd>Alt+Up</kbd>/<kbd>Alt+Down</kbd> switch between live copies of the
+program; <kbd>Enter</kbd> on a copy's row in Windows does the same.</p>
+
+<h3 id="editor-runto">5.8. Running to a line</h3>
+<ul>
+<li><kbd>F8</kbd> in the code field: run until any copy of the program reaches the cursor's line.</li>
+<li><kbd>Shift+Enter</kbd>: run until one EXA reaches it (the one you're following in the code
+field, or that row's EXA in Windows).</li>
+</ul>
+
+<h3 id="editor-goal">5.9. The goal</h3>
+<p>Show Goal (or <kbd>F1</kbd>) opens a popup of the finished state: files, values, hardware.
+<kbd>Enter</kbd> on a file opens its values. Tables are walked like tables: <kbd>Up</kbd>/<kbd>Down</kbd>
+within a column, <kbd>Left</kbd>/<kbd>Right</kbd> across.</p>
+
+<h3 id="editor-scores">5.10. Test runs and solutions</h3>
+<p>Test Run picks which of the 100 test runs you start from: <kbd>Left</kbd>/<kbd>Right</kbd> by one,
+<kbd>Page Up</kbd>/<kbd>Page Down</kbd> by ten, <kbd>Enter</kbd> to type a number.</p>
+<p>The solution browser (<kbd>Ctrl+O</kbd>): <kbd>Enter</kbd> opens a solution, <kbd>Backspace</kbd>
+deletes it without asking.</p>
+
+<h3 id="editor-notes">5.11. Things worth knowing</h3>
+<ul>
+<li>EXAs that aren't yours are "other EXA", or "enemy EXA" in battles.</li>
+<li>A file held by someone else's EXA has no number on screen; the host says "other EXA holding a
+file".</li>
+<li><kbd>Ctrl+Z</kbd> also undoes the mod's deleting, reordering and renaming.</li>
+</ul>
+
+<h2 id="extras">6. Everything else on the desktop</h2>
+
+<h3 id="extras-solitaire">6.1. ПАСЬЯНС</h3>
+<p><kbd>Left</kbd>/<kbd>Right</kbd> between columns, <kbd>Up</kbd>/<kbd>Down</kbd> within one.
+<kbd>Enter</kbd> picks up a card and everything on top of it; <kbd>Enter</kbd> on a destination drops
+it; <kbd>Backspace</kbd> puts it back.</p>
+
+<h3 id="extras-sandbox">6.2. The Redshift sandbox</h3>
+<p>The editor plus a sprite group (<kbd>Enter</kbd> toggles a pixel), a 2D/3D switch and, while
+running, a Screen group listing what's drawn. While a program free-runs, every key goes to the game
+for the pad (default W A S D, J K L, Enter for Start; rebind in the control panel). <kbd>F3</kbd>
+gives you the keyboard back.</p>
+
+<h3 id="extras-custom">6.3. Axiom VirtualNetwork+</h3>
+<p>Remote (Workshop) and Personal (your own scripts) tabs. <kbd>Enter</kbd> plays,
+<kbd>Backspace</kbd> deletes, the Actions group has the rest.</p>
+
+<h3 id="extras-hackmatch">6.4. HACK*MATCH</h3>
+<p>Not accessible, and not planned, as it is basically Tetris and would require complete reimagining for audio.</p>
+
+<h2 id="keys">7. Key reference</h2>
+
+<h3 id="keys-everywhere">7.1. Everywhere</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Key</th><th scope="col">What it does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Next / previous group</td></tr>
+<tr><td><kbd>Up</kbd> / <kbd>Down</kbd></td><td>Previous / next item</td></tr>
+<tr><td><kbd>Left</kbd> / <kbd>Right</kbd></td><td>Move along a row; adjust a slider</td></tr>
+<tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>First / last item</td></tr>
+<tr><td><kbd>Page Up</kbd> / <kbd>Page Down</kbd></td><td>Adjust a slider by a large step</td></tr>
+<tr><td><kbd>Ctrl+Up</kbd> / <kbd>Ctrl+Down</kbd></td><td>Previous / next region</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Activate</td></tr>
+<tr><td><kbd>Backspace</kbd></td><td>Secondary action: delete, put back, close a popup</td></tr>
+<tr><td><kbd>Space</kbd></td><td>Read the game's tooltip</td></tr>
+<tr><td><kbd>F6</kbd></td><td>Echo typed characters on / off</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="keys-editor">7.2. EXA editor</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Key</th><th scope="col">What it does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Alt+1</kbd> to <kbd>Alt+6</kbd></td><td>Jump to Task, Windows, Hosts, Code, Test log, Solution</td></tr>
+<tr><td><kbd>F2</kbd></td><td>Step one cycle</td></tr>
+<tr><td><kbd>F3</kbd> / <kbd>F4</kbd> / <kbd>F5</kbd></td><td>Pause / run / fast-forward</td></tr>
+<tr><td><kbd>F1</kbd></td><td>Goal popup</td></tr>
+<tr><td><kbd>F8</kbd></td><td>Run to the cursor's line, any copy</td></tr>
+<tr><td><kbd>Shift+Enter</kbd></td><td>Run to the line, one EXA</td></tr>
+<tr><td><kbd>X</kbd> / <kbd>T</kbd> / <kbd>F</kbd> / <kbd>M</kbd></td><td>Read the focused EXA's register</td></tr>
+<tr><td><kbd>Ctrl+Up</kbd> / <kbd>Ctrl+Down</kbd></td><td>In the code field: previous / next EXA program</td></tr>
+<tr><td><kbd>Alt+Up</kbd> / <kbd>Alt+Down</kbd></td><td>While running, in the code field: previous / next live copy</td></tr>
+<tr><td><kbd>Ctrl+Enter</kbd></td><td>In the code field: new EXA</td></tr>
+<tr><td><kbd>Ctrl+O</kbd></td><td>Solution browser</td></tr>
+<tr><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Undo / redo</td></tr>
+<tr><td><kbd>Shift+Up</kbd> / <kbd>Shift+Down</kbd></td><td>On an EXA in Windows: move it up / down</td></tr>
+<tr><td><kbd>Escape</kbd></td><td>Close a popup; otherwise reset the run</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="keys-cutscenes">7.3. Cutscenes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Key</th><th scope="col">What it does</th></tr></thead>
+<tbody>
+<tr><td><kbd>Space</kbd>, <kbd>Tab</kbd> or <kbd>Enter</kbd></td><td>Next line</td></tr>
+<tr><td><kbd>Escape</kbd></td><td>Skip the scene</td></tr>
+<tr><td><kbd>1</kbd> to <kbd>9</kbd></td><td>Pick an EMBER reply</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="troubleshooting">8. Troubleshooting</h2>
+<p>Send me <code>%LOCALAPPDATA%\Echopunks\echopunks.log</code> (a fresh one each launch, so grab it
+before restarting) and what you were doing.</p>
+
+</main>
+</body>
+</html>

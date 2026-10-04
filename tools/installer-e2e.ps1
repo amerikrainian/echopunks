@@ -73,7 +73,7 @@ try {
     $shipped = @("EXAPUNKS.exe.config", "Echopunks.dll", "Echopunks.Module.dll", "Mono.Cecil.dll", "0Harmony.dll",
         "prism.dll", "steam_appid.txt", "Echopunks\namemap.tsv", "Echopunks\locale\enGB\ui.json",
         "Echopunks\docs\twn-1.html", "Echopunks\docs\twn-2.html", "Echopunks\docs\twn-epilogue.html",
-        "Echopunks\docs\images\twn-1-fig01.png", "Echopunks\install.json")
+        "Echopunks\docs\images\twn-1-fig01.png", "Echopunks\echopunks manual.html", "Echopunks\install.json")
     foreach ($rel in $shipped) { Assert-True (Test-Path (Join-Path $game $rel)) "installed $rel" }
     Assert-True ((Get-Content -Raw (Join-Path $game "steam_appid.txt")) -eq "716490") "steam_appid.txt is the shipped one"
     Assert-True ((@(Get-ChildItem -Recurse -File (Join-Path $game "Echopunks\backups") -ErrorAction SilentlyContinue | Where-Object Name -eq "steam_appid.txt")).Count -eq 1) "pre-existing steam_appid.txt backed up"

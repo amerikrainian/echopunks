@@ -2,6 +2,8 @@
 
 Screen-reader accessibility mod for [EXAPUNKS](https://store.steampowered.com/app/716490/EXAPUNKS/).
 
+The full player manual is [docs/echopunks manual.html](docs/echopunks%20manual.html).
+
 ## Keys
 
 ### Everywhere
