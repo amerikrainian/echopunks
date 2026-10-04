@@ -4,6 +4,7 @@
 
 - Add a proper settings screen.
 - You can now choose whether all events or only those concerning the currently focused EXA are read out to you. As a consequence, enemy actions will read out before the cycle number, since they already happened. Toggle this with Ctrl+F2.
+- Added a progress bar for you completing a test so you can get some more feedback during fast runs and not have to scroll around UI as much.
 
 ## V0.2.0
 

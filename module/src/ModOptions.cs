@@ -56,6 +56,18 @@ namespace Echopunks
                         Selected = () => StepEchoScope.All, Select = () => StepEchoScope.All = true },
                 },
             },
+            new ModOptionRow
+            {
+                Id = "beeps",
+                Label = () => Loc.T("modopt.beeps"),
+                Options = new[]
+                {
+                    new ModOption { Id = "beeps.on", Label = () => GameText.T("Enable"),
+                        Selected = () => TestBeeps.Enabled, Select = () => TestBeeps.Enabled = true },
+                    new ModOption { Id = "beeps.off", Label = () => GameText.T("Disable"),
+                        Selected = () => !TestBeeps.Enabled, Select = () => TestBeeps.Enabled = false },
+                },
+            },
         };
     }
 }

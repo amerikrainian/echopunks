@@ -163,6 +163,7 @@ namespace Echopunks
                 Patches.PanelCapture.IsHostName = Screens.ExaEditorScreen.IsSpokenHostName;
                 Patches.PanelCapture.Apply(_harmony);       // special-puzzle panel text + goal-view force
                 Patches.OptionsInjection.Apply(_harmony);   // the control panel's Mod tab (game widgets)
+                Patches.TestCompleteBeep.Apply(_harmony);   // progress beep per completed test run
                 Screens.CutsceneNotes.Apply();              // Moss's EXODUS recollection in the Ghast visit (campaign lists exist post-init)
             }
             // Ticks only run after game init, so this can never talk over the boot prompt.

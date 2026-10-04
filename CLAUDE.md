@@ -446,8 +446,22 @@ key bubbling can't swallow them. SELECTION-FOLLOWS-FOCUS: a node with `NodeVtabl
   sound_44 like method_3). ONE list (`ModOptions.Rows`) feeds both the drawn tab and the spoken
   model. Rows: Character Echo (game "Enable"/"Disable" → TypingEcho.Set, the F6 key's setting)
   and Step Narration (Focused EXA / All EXAs → `StepEchoScope`, settings.json
-  "editor.stepEcho" = focused|all). Screenshot-verified layout: two rows of weight 1, radios in
-  the game's two option columns (x 1734 / 2151), centered in their boxes.
+  "editor.stepEcho" = focused|all) and Test Progress Beeps (Enable/Disable → `TestBeeps`,
+  "editor.testBeeps", default on). Screenshot-verified layout (2 and 3 rows): rows of weight 1,
+  radios in the game's two option columns (x 1734 / 2151), centered in their boxes.
+- `module/src/Audio/Tones.cs` — SYNTHESIZED BEEPS through the game's own mixer (2026-10-04):
+  GClass372 is a software mixer over one SDL device (44.1 kHz S16 stereo, 2048-frame buffer ≈
+  46 ms latency); a GClass5 is a voice of interleaved stereo shorts in memory, played by the
+  public smethod_4(clip, volume, loop) (locks the device; uint_0 == 0 = no device, no-op). We
+  synthesize sines with 5 ms ramps, cache clips by (Hz, ms), play at GClass1.float_1 (the live
+  SFX slider — what the game's Sound wrapper uses), ONE voice (a new beep cuts the last via
+  smethod_5). `Progress(p)` = NVDA's progress scale, 110·2^(4p) Hz, 40 ms. No native handle,
+  so nothing host-side. `Played`/`LastHz` exist for probes (we can't hear).
+  `Patches/TestCompleteBeep.cs`: prefix on EditorScreen.method_21 (the game's per-test
+  bookkeeping — free runs AND paused stepping call it once the sim is solved; its bool_3 guard
+  makes repeats no-ops, so the prefix beeps while bool_3 is still false) at p = (int_0 + 1) /
+  GClass68.int_0 (tests completed in this run / 100). Battles beep per round. Fast finishes a
+  test per frame — the one-voice cut turns that into a rising sweep (KGOG-TV: 30 beeps in 0.5 s).
 - `module/src/Screens/DesktopScreens.cs` — the desktop hub (`DesktopHubScreen`, see
   "Desktop decoded"): four Tab stops — organizer task list (rows ENUMERATED live from
   the campaign lists, the first place the WotR items-from-collections pattern applies;
