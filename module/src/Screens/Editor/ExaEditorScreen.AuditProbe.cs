@@ -47,6 +47,8 @@ namespace Echopunks.Screens
                     case "markseen":
                         GameLogic.gameLogic_0.saveData_0.method_12(arg, 0);
                         return "marked " + arg;
+                    // unlockall: WRITES THE SAVE (back it up). See AuditUnlockAll.
+                    case "unlockall": return AuditUnlockAll();
                     // lockcodes: PB056's lock combinations (public int_2) — audit-only, to drive the
                     // unlock path in a scripted run pass.
                     case "lockcodes":
@@ -110,6 +112,49 @@ namespace Echopunks.Screens
                 }
             }
             return sb.ToString();
+        }
+
+        // Reveal every campaign row (main + side) and mark every dialogue seen. The game has no
+        // "unlocked" state: a row appears once its predecessor is COMPLETE (GClass61's reveal
+        // walk), so every puzzle row is marked complete the score-less way the game itself uses
+        // for over-size solves (SolvedWithBadSize — no fake Best.* entries, no histogram marker).
+        // Meetings complete via CutsceneComplete.<id>.0; every intro/outro is marked seen; chat
+        // ids (rows with post-completion chat) join ChatProgress in campaign order. The optional
+        // program wins (solitaire/sandbox/arcade) are left open — they gate nothing. Then the live
+        // desktop's marker set is refilled silently (imethod_3) and the mod's desktop watcher is
+        // made to re-prime, so nothing speaks a burst of "new task" lines; config flushed to disk.
+        private static string AuditUnlockAll()
+        {
+            var save = GameLogic.gameLogic_0.saveData_0;
+            var chat = new List<string>(save.method_14());
+            int puzzles = 0, meetings = 0, scenes = 0, chats = 0;
+            foreach (var list in new[] { GClass61.gclass290_0, GClass61.gclass290_1 })
+            {
+                foreach (var it in list.list_0)
+                {
+                    int kind = (int)it.genum20_0;
+                    if (kind == 0 && !it.method_0()) { save.method_1(it.maybe_1.method_2()); puzzles++; }
+                    if (kind == 1 && !save.method_13(it.string_0, 0)) { save.method_12(it.string_0, 0); meetings++; }
+                    if (it.method_1() && !save.method_13(it.string_0, 0)) { save.method_12(it.string_0, 0); scenes++; }
+                    if (it.method_2() && !save.method_13(it.string_0, 1)) { save.method_12(it.string_0, 1); scenes++; }
+                    if (it.vignette_0.list_2.Count > 0 && !chat.Contains(it.string_0)) { chat.Add(it.string_0); chats++; }
+                }
+            }
+            save.method_15(chat.ToArray());
+
+            foreach (var screen in GameState.ScreenStack())
+            {
+                var desktop = screen as DesktopScreen;
+                if (desktop != null) desktop.imethod_3();
+            }
+            foreach (var s in ScreenManager.Registered)
+            {
+                var hub = s as DesktopHubScreen;
+                if (hub != null) hub.Reprime();
+            }
+            save.configFile_0.method_6();
+            return "puzzles completed " + puzzles + ", meetings " + meetings + ", scenes seen " + scenes
+                + ", chats added " + chats;
         }
 
         private static string AuditOpen(string id)
@@ -216,7 +261,7 @@ namespace Echopunks.Screens
         {
             var s = AuditScreen;
             if (s == null) return "editor screen not focused";
-            s._selectedHost = n;
+            s.SelectHost(n);
             return "selected host " + n;
         }
 

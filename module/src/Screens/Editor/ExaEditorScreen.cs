@@ -177,10 +177,11 @@ namespace Echopunks.Screens
                 _goalPopup = false; // content vanished — fall through to the normal graph
                 Patches.PanelCapture.SetArmed(false, false);
             }
-            // Stop order (user preference): task -> windows -> hosts -> links -> files -> code…
+            // Stop order (user preference): task -> windows -> hosts -> grid -> links -> files -> code…
             BuildTask(b, e);
             BuildWindows(b, e);
             BuildHosts(b, e);
+            BuildGrid(b, e);
             BuildLinks(b, e);
             BuildFiles(b, e);
             BuildRegisters(b, e);

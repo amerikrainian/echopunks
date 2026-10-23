@@ -88,6 +88,11 @@ namespace Echopunks.UI
         public override bool StopPresent(object stopKey)
             => _graph?.Current != null && _graph.StopLanding(stopKey) != null;
 
+        public override void ForgetStop(object stopKey)
+        {
+            if (stopKey != null) _state.StopMemory.Remove(stopKey);
+        }
+
         public override object FocusedStopKey => _graph?.CurrentNode?.StopKey;
 
         public override bool TextEntryFocused => _graph?.CurrentNode?.Vtable?.TextEntry == true;

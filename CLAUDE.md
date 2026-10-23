@@ -746,7 +746,7 @@ Models the name-preserved `EditorScreen` for every mode (meta.genum18_0: 0 norma
 throughout (reset-or-leave), except while a mod-side popup holds ModalCapturesEscape.
 
 **Tab stops, in order** (each absent when empty/inapplicable): task → windows → hosts
-→ links → files → registers → sign → problems → code → sprite (sandbox) → screen
+→ grid (compass maps) → links → files → registers → sign → problems → code → sprite (sandbox) → screen
 (sandbox, armed) → stats → controls → go-to-cycle → test log → execution log →
 solution. Host-scoped info (links/files/registers/sign) always follows the SELECTED
 host, never a general stop (user rule).
@@ -1169,7 +1169,18 @@ may leak. The rulebook accumulated so far:
   would be heard from nowhere, so both sides speak "blank, destination" (text.blank,
   the empty-drawn-value word; PB028's scripted-terminal corridor, 2026-09-06).
   Single-cell hosts DO draw their link ids —
-  speak them. Runtime flips (a modem dial setting ids + unlocking) are pure model
+  speak them.
+  GRID STOP (2026-10-23, Network.cs BuildGrid): on maps with a CompassRoses entry a "Grid" stop
+  sits between hosts and links — one raw node per host (name only, no positions), Up/Right/Down/
+  Left TRAVEL the link the rose letters N/E/S/W; the links stop is unchanged. Directions come
+  from the LETTERED ids, never geometry (the home link is 800 = north on all three maps yet drawn
+  running east); unlettered ids (the -1 home return) take the side their host is drawn on (grid
+  frame, dominant axis of the doubled-centre delta) if that side is free. ONE selection
+  (_selectedHost via SelectHost) behind hosts rows, grid travel and link traversal; the hosts
+  and grid stops forget their stop memory on every build while focus is outside them
+  (LandOnSelectedHost — memory beats Selected, and a traversal's vanishing link row makes the
+  reconcile fallback REMEMBER the previous stop's last node), so entering either lands on the
+  selected host. Walked live on PB021 2026-10-23. Runtime flips (a modem dial setting ids + unlocking) are pure model
   state the per-frame re-resolve already speaks.
 - ART-LETTERED HOSTS beyond UC Berkeley go one at a time through the ArtLetteredHosts
   table (Readouts.cs, keyed "puzzle id/internal name" — PB032's mainframe slab).

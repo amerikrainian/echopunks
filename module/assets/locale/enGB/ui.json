@@ -89,6 +89,7 @@
   "editor.code": "{exa}",
   "editor.hosts": "Hosts",
   "editor.links": "{host} links",
+  "editor.grid": "Grid",
   "editor.link.oneway": "One way",
   "editor.mbus": "{exa} M-bus",
   "editor.exa.name": "Name",

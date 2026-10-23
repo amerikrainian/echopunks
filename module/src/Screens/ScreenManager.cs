@@ -48,6 +48,10 @@ namespace Echopunks.Screens
 
         public static void Register(Screen screen) => _registered.Add(screen);
 
+#if DEBUG
+        internal static IReadOnlyList<Screen> Registered => _registered;
+#endif
+
         public static void Tick()
         {
             ApplyDiff(Resolve()); // poll the game-driven screens → push/pop on the persistent stack

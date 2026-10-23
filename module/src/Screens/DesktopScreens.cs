@@ -617,6 +617,12 @@ namespace Echopunks.Screens
         // focus would swallow exactly those lines. A fresh instance (re-entered from the title)
         // primes silently past the constructor-replayed history.
         private object _primedFor;
+
+#if DEBUG
+        /// <summary>Audit probe: re-baseline the chat/task watermarks on the next update (after the
+        /// probe rewrites the save, so the refilled marker set doesn't announce as a burst).</summary>
+        internal void Reprime() => _primedFor = null;
+#endif
         private int _chatSeen;
         private readonly HashSet<object> _markersSeen = new HashSet<object>();
 

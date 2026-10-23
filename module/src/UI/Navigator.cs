@@ -55,6 +55,10 @@ namespace Echopunks.UI
         /// FocusStop on an absent stop is silently dropped, so callers that owe feedback ask first.</summary>
         public virtual bool StopPresent(object stopKey) => false;
 
+        /// <summary>Drop a Tab-stop's remembered position, so its next landing falls to the SELECTED
+        /// member — for stops whose selection is driven from elsewhere (memory beats Selected).</summary>
+        public virtual void ForgetStop(object stopKey) { }
+
         /// <summary>The Tab-stop the focused node belongs to, or null.</summary>
         public virtual object FocusedStopKey => null;
 

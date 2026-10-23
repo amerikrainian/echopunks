@@ -49,6 +49,9 @@ namespace Echopunks.UI
         /// <summary>True when the active navigator's current render has this Tab-stop.</summary>
         public static bool StopPresent(object stopKey) => Active != null && Active.StopPresent(stopKey);
 
+        /// <summary>Drop a Tab-stop's remembered position (its next landing = the selected member).</summary>
+        public static void ForgetStop(object stopKey) => Active?.ForgetStop(stopKey);
+
         /// <summary>The Tab-stop the focused node belongs to, or null.</summary>
         public static object FocusedStopKey => Active?.FocusedStopKey;
 

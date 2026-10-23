@@ -24,6 +24,7 @@ namespace Echopunks.Screens
         {
             var sim = TheSim(e);
             if (sim == null || sim.list_0.Count == 0) return;
+            LandOnSelectedHost("hosts");
             b.BeginStop("hosts");
             b.PushContext(Loc.T("editor.hosts"));
             for (int i = 0; i < sim.list_0.Count; i++)
@@ -38,10 +39,112 @@ namespace Echopunks.Screens
                         new NodeAnnouncement(() => HostOccupants(index), kind: AnnouncementKinds.Value),
                     },
                     Selected = () => _selectedHost == index,
-                    OnSelect = () => _selectedHost = index,
+                    OnSelect = () => SelectHost(index),
                 });
             }
             b.PopContext();
+        }
+
+        // The ONE host-selection path (hosts rows, grid travel, link traversal): the host-scoped
+        // stops rebuild from _selectedHost.
+        private void SelectHost(int index) => _selectedHost = index;
+
+        // The hosts and grid stops are two views of ONE selection, changed from three places —
+        // so while focus is OUTSIDE such a stop it keeps no remembered row (memory beats Selected
+        // in StopLanding) and entering it always lands on the selected host. Forgetting at
+        // selection time wasn't enough: a link traversal's vanishing row sends the reconcile
+        // fallback to the nearest survivor (the previous stop's last node) and REMEMBERS it there.
+        private static void LandOnSelectedHost(string stopKey)
+        {
+            if (!Equals(Navigation.FocusedStopKey, stopKey)) Navigation.ForgetStop(stopKey);
+        }
+
+        // ---- the GIS grid (compass maps only — those with a CompassRoses entry): every host as
+        // a node, the arrows traveling the link lettered for that direction (Up = the rose's
+        // north id, Right = east, Down = south, Left = west). Names only; selection follows focus,
+        // so the links/files/registers stops follow the grid. ----
+
+        // N,E,S,W — the CompassRoses id order.
+        private static readonly GraphDir[] CompassDirs = { GraphDir.Up, GraphDir.Right, GraphDir.Down, GraphDir.Left };
+
+        private void BuildGrid(GraphBuilder b, EditorScreen e)
+        {
+            var rose = CompassRose();
+            var sim = TheSim(e);
+            if (rose == null || sim == null || sim.list_0.Count == 0) return;
+            Team team;
+            try { team = e.method_24(); }
+            catch { return; }
+
+            LandOnSelectedHost("grid");
+            b.BeginStop("grid");
+            b.PushContext(Loc.T("editor.grid"));
+            for (int i = 0; i < sim.list_0.Count; i++)
+            {
+                int index = i;
+                b.AddNode(GridId(i), new NodeVtable
+                {
+                    ControlType = ControlTypes.Text,
+                    Announcements = new[]
+                    {
+                        new NodeAnnouncement(() => HostName(HostAt(index)), kind: AnnouncementKinds.Label),
+                    },
+                    Selected = () => _selectedHost == index,
+                    OnSelect = () => SelectHost(index),
+                });
+            }
+            for (int i = 0; i < sim.list_0.Count; i++)
+            {
+                var host = sim.list_0[i];
+                var slots = new int[] { -1, -1, -1, -1 };
+                var unlettered = new System.Collections.Generic.List<SimHost>();
+                foreach (var link in host.list_1)
+                {
+                    Maybe<int> id;
+                    SimHost dest;
+                    try
+                    {
+                        id = link.method_2(host).method_2(team);
+                        dest = link.method_1(host);
+                    }
+                    catch { continue; }
+                    if (!id.method_0()) continue; // no id on this side = not traversable from here
+                    int d = Array.IndexOf(rose, id.method_2());
+                    if (d < 0) { unlettered.Add(dest); continue; }
+                    if (slots[d] < 0) slots[d] = sim.list_0.IndexOf(dest);
+                }
+                // Ids the rose doesn't letter (the home RETURN link, -1) take the side their host
+                // is drawn on, if the lettered ids left it free (PB021's SJ0: 800/801/802 + -1 west).
+                foreach (var dest in unlettered)
+                {
+                    int d = DrawnDirection(host, dest);
+                    if (d >= 0 && slots[d] < 0) slots[d] = sim.list_0.IndexOf(dest);
+                }
+                for (int d = 0; d < 4; d++)
+                    if (slots[d] >= 0) b.Connect(GridId(i), CompassDirs[d], GridId(slots[d]));
+            }
+            b.PopContext();
+        }
+
+        private static ControlId GridId(int hostIndex) => ControlId.Structural("ed.grid." + hostIndex);
+
+        // Which side of `from` the host `to` is drawn on, in the map grid's own frame (the frame
+        // the rose letters: +y north, +x east) — the dominant axis of the centre-to-centre delta.
+        // NOT used for lettered ids: the home link is 800 (north) on all three compass maps yet
+        // drawn running east. Equal axes = -1 (no honest side to pick).
+        private static int DrawnDirection(SimHost from, SimHost to)
+        {
+            try
+            {
+                Range2 a = from.range2_0, c = to.range2_0;
+                // Doubled centres: Start + End, so odd sizes stay integral.
+                int dx = (c.Start.int_0 + c.End.int_0) - (a.Start.int_0 + a.End.int_0);
+                int dy = (c.Start.int_1 + c.End.int_1) - (a.Start.int_1 + a.End.int_1);
+                if (Math.Abs(dx) == Math.Abs(dy)) return -1;
+                if (Math.Abs(dy) > Math.Abs(dx)) return dy > 0 ? 0 : 2;
+                return dx > 0 ? 1 : 3;
+            }
+            catch { return -1; }
         }
 
         private void BuildLinks(GraphBuilder b, EditorScreen e)
@@ -125,7 +228,7 @@ namespace Echopunks.Screens
                     OnActivate = () =>
                     {
                         if (destIndex < 0) return;
-                        _selectedHost = destIndex;
+                        SelectHost(destIndex);
                         Navigation.FocusNode(ControlId.Structural("ed.host." + destIndex), announce: false);
                         Navigation.FocusStop("links");
                     },
