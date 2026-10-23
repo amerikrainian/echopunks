@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.2.2
+
+- The GIS missions will now show the actual grid of nodes as opposed to only allowing  travel via lists of links. Hopefully this makes visualizing the connections easier.
+
 ## V0.2.1
 
 - Add a proper settings screen.
