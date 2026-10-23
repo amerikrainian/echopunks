@@ -98,8 +98,9 @@
     </ItemGroup>
     <Copy SourceFiles="@(DocFiles)" DestinationFolder="$(GameDir)\Echopunks\docs" />
     <Copy SourceFiles="@(DocImages)" DestinationFolder="$(GameDir)\Echopunks\docs\images" />
-    <!-- The player manual: top of the mod folder, the same place build_release.ps1 stages it. -->
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\docs\echopunks manual.html" DestinationFolder="$(GameDir)\Echopunks" />
+    <!-- The player manual is an mdbook (docs_src) that only build_release.ps1 renders and ships;
+         remove the single-page HTML manual earlier dev deploys left behind. -->
+    <Delete Files="$(GameDir)\Echopunks\echopunks manual.html" />
     <Message Importance="high" Text="Echopunks.Module + locale + docs deployed to $(GameDir)" />
   </Target>
 

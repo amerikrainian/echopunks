@@ -17,3 +17,6 @@ tools/de4dot/
 # Installer build tree and packaged releases (build-installer.ps1 / build_release.ps1 output).
 installer/target/
 releases/
+
+# The rendered manual (mdbook build docs_src)
+docs_src/book/

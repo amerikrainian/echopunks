@@ -1,9 +1,9 @@
 # Build the distributable mod zip: the Release build's shipping file set laid out as the
 # game folder - EXAPUNKS.exe.config, Echopunks.dll, Echopunks.Module.dll, Mono.Cecil.dll,
 # 0Harmony.dll, prism.dll, steam_appid.txt, and the Echopunks\ folder (namemap.tsv + locale\ +
-# docs\ - the zine text documents TRASH WORLD NEWS opens - + the player manual).
-# The zip root IS the game folder, so the installer (and a manual user) extracts it straight
-# into the game dir. A Release build carries no dev tooling (no dev server, no Mono.CSharp).
+# docs\ - the zine text documents TRASH WORLD NEWS opens), and the rendered mdbook manual
+# (docs_src) under EchopunksDocs. The zip root IS the game folder, so the installer (and a
+# manual user) extracts it straight into the game dir. A Release build carries no dev tooling (no dev server, no Mono.CSharp).
 #
 # Adapted from the Non-Visual Calculus installer by Rashad Naqeeb (MIT),
 # https://github.com/rashadnaqeeb/NonVisualCalculus - by way of the Harkest Dungeon
@@ -29,12 +29,12 @@ $moduleOutDir = Join-Path $scriptDir "module\bin\Release"
 $nameMap = Join-Path $scriptDir "module\obj\Release\namemap.tsv"
 $localeDir = Join-Path $scriptDir "module\assets\locale"
 $docsDir = Join-Path $scriptDir "docs\game"
-$manual = Join-Path $scriptDir "docs\echopunks manual.html"
+$bookDir = Join-Path $scriptDir "docs_src"
 $prismDll = Join-Path $scriptDir "third_party\prism\prism.dll"
 $configFile = Join-Path $scriptDir "deploy\EXAPUNKS.exe.config"
 $zipPath = Join-Path $releaseDir "Echopunks-v$version.zip"
 
-foreach ($required in @($prismDll, $configFile, $localeDir, $docsDir, $manual, (Join-Path $scriptDir "game\EXAPUNKS-deob.exe"))) {
+foreach ($required in @($prismDll, $configFile, $localeDir, $docsDir, (Join-Path $bookDir "book.toml"), (Join-Path $scriptDir "game\EXAPUNKS-deob.exe"))) {
     if (-not (Test-Path $required)) {
         throw "Required file not found: $required (the module build needs game\EXAPUNKS-deob.exe - run tools\prepare-game.ps1)"
     }
@@ -51,6 +51,11 @@ try {
     dotnet build Echopunks.sln -c Release -v:minimal
     if ($LASTEXITCODE -ne 0) {
         throw "Release build failed with exit code $LASTEXITCODE"
+    }
+
+    mdbook build $bookDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docs build failed with exit code $LASTEXITCODE"
     }
 
     $hostDll = Join-Path $hostOutDir "Echopunks.dll"
@@ -95,8 +100,9 @@ try {
     New-Item -ItemType Directory -Force (Join-Path $modDir "docs\images") | Out-Null
     Copy-Item -Path (Join-Path $docsDir "*.html") -Destination (Join-Path $modDir "docs")
     Copy-Item -Path (Join-Path $docsDir "images\*") -Destination (Join-Path $modDir "docs\images")
-    # The player manual sits at the top of the mod folder, where a user browsing the game dir finds it.
-    Copy-Item -LiteralPath $manual -Destination $modDir
+    # The player manual: the rendered book at the top of the game folder, the sibling mods' layout.
+    # Packaging pattern adapted from SayTheSpire2: https://github.com/bradjrenshaw/say-the-spire2
+    Copy-Item -Path (Join-Path $bookDir "book") -Destination (Join-Path $stageDir "EchopunksDocs") -Recurse
 
     if (Test-Path $zipPath) {
         Remove-Item -LiteralPath $zipPath -Force

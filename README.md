@@ -2,7 +2,8 @@
 
 Screen-reader accessibility mod for [EXAPUNKS](https://store.steampowered.com/app/716490/EXAPUNKS/).
 
-The full player manual is [docs/echopunks manual.html](docs/echopunks%20manual.html).
+Docs are [here](https://amerikrainian.com/echopunks/). The release zip also ships them in the
+game folder under `EchopunksDocs` (open `index.html`).
 
 ## Keys
 

@@ -177,9 +177,15 @@ still cannot build the module.
 A Debug build deploys into the game folder: `Echopunks.dll`, `Echopunks.Module.dll`,
 `Mono.Cecil.dll` (the remapper), `0Harmony.dll`, `prism.dll` (native screen-reader
 bridge), `EXAPUNKS.exe.config`, `Mono.CSharp.dll` (dev REPL), `Echopunks\namemap.tsv`
-+ `Echopunks\locale\` + `Echopunks\docs\` (the zine text documents from repo `docs/game/`)
-+ `Echopunks\echopunks manual.html` (the player manual, repo `docs/echopunks manual.html`),
-writes `steam_appid.txt`, and deletes any stale pre-DLL `Echopunks.exe`.
++ `Echopunks\locale\` + `Echopunks\docs\` (the zine text documents from repo `docs/game/`),
+writes `steam_appid.txt`, and deletes any stale pre-DLL `Echopunks.exe` (and the pre-mdbook
+`Echopunks\echopunks manual.html`). The player manual is NOT deployed by Debug builds.
+PLAYER DOCS (2026-10-23, the guildrun/starvaders layout): an mdbook in `docs_src/`
+(`mdbook build docs_src`; `docs_src/book/` gitignored; mdbook 0.5.2), one page per former
+section of the old single-page HTML manual, plus a Change Log page that includes
+`CHANGELOG.md`. `build_release.ps1` renders it and ships it as `EchopunksDocs\` at the game
+root; `.github/workflows/build-docs.yml` publishes it to GitHub Pages
+(amerikrainian.com/echopunks/) on a push to main touching `docs_src/` or `CHANGELOG.md`.
 The HOST dll copy needs the game closed (file-locked; the deploy warns and continues);
 the MODULE dll deploys fine with the game running — that's the hot-reload loop.
 `dotnet build -c Release` compiles without deploying and contains zero dev tooling.
@@ -192,7 +198,7 @@ belongs there — grow the suite with each subsystem.
 User install (the future installer) = copy 7 files into the game folder —
 `EXAPUNKS.exe.config`, `Echopunks.dll`, `Echopunks.Module.dll`, `Mono.Cecil.dll`,
 `0Harmony.dll`, `prism.dll`, `steam_appid.txt` — plus the `Echopunks\` folder
-(`namemap.tsv` + `locale\` + `docs\` + `echopunks manual.html`). Uninstall = delete the config. (namemap.tsv ships name
+(`namemap.tsv` + `locale\` + `docs\`) and the rendered manual `EchopunksDocs\`. Uninstall = delete the config. (namemap.tsv ships name
 pairs only — the same information our ordinals always encoded; no game code ships.) The config binds the
 host assembly by **full display name**, so the host's `AssemblyVersion` is pinned at
 **1.0.0.0** in its csproj — bump both in lockstep or the mod silently stops loading
