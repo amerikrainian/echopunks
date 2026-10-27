@@ -46,8 +46,13 @@ namespace Echopunks.Screens
         }
 
         // The ONE host-selection path (hosts rows, grid travel, link traversal): the host-scoped
-        // stops rebuild from _selectedHost.
-        private void SelectHost(int index) => _selectedHost = index;
+        // stops rebuild from _selectedHost. A change from anywhere but grid travel ends the
+        // grid's trail (Backspace would otherwise walk a route you are no longer on).
+        private void SelectHost(int index, bool fromGrid = false)
+        {
+            if (!fromGrid && index != _selectedHost) _gridTrail.Clear();
+            _selectedHost = index;
+        }
 
         // The hosts and grid stops are two views of ONE selection, changed from three places —
         // so while focus is OUTSIDE such a stop it keeps no remembered row (memory beats Selected
@@ -59,22 +64,24 @@ namespace Echopunks.Screens
             if (!Equals(Navigation.FocusedStopKey, stopKey)) Navigation.ForgetStop(stopKey);
         }
 
-        // ---- the GIS grid (compass maps only — those with a CompassRoses entry): every host as
-        // a node, the arrows traveling the link lettered for that direction (Up = the rose's
-        // north id, Right = east, Down = south, Left = west). Names only; selection follows focus,
-        // so the links/files/registers stops follow the grid. ----
+        // ---- the host grid: every host as a node; an arrow TRAVELS the link drawn leaving the
+        // host that way and speaks it like its links row ("800, INBOX"). The frame is the map
+        // grid's own, rotated 45 degrees off the isometric screen (the GIS compass rose's frame:
+        // Up = +y = screen up-left, Right = +x = up-right, Down = down-right, Left = down-left).
+        // Directions come from the link's DRAWN axis on every map, the compass maps included
+        // (user decision, 2026-10-27 — the rose's lettering disagrees only on the home link,
+        // 800 = "north" yet drawn running east). Several links one way open a chooser; Backspace
+        // walks the trail of grid travels back. Selection is shared with the hosts stop, so the
+        // links/files/registers stops follow the grid. ----
 
-        // N,E,S,W — the CompassRoses id order.
-        private static readonly GraphDir[] CompassDirs = { GraphDir.Up, GraphDir.Right, GraphDir.Down, GraphDir.Left };
+        // The grid's travel trail: the hosts each grid travel left, newest last. Any selection
+        // change from elsewhere (hosts rows, a links-stop traversal) clears it.
+        private readonly System.Collections.Generic.List<int> _gridTrail = new System.Collections.Generic.List<int>();
 
         private void BuildGrid(GraphBuilder b, EditorScreen e)
         {
-            var rose = CompassRose();
             var sim = TheSim(e);
-            if (rose == null || sim == null || sim.list_0.Count == 0) return;
-            Team team;
-            try { team = e.method_24(); }
-            catch { return; }
+            if (sim == null || sim.list_0.Count == 0) return;
 
             LandOnSelectedHost("grid");
             b.BeginStop("grid");
@@ -88,50 +95,167 @@ namespace Echopunks.Screens
                     Announcements = new[]
                     {
                         new NodeAnnouncement(() => HostName(HostAt(index)), kind: AnnouncementKinds.Label),
+                        new NodeAnnouncement(() => GridDirections(index), kind: AnnouncementKinds.Value),
                     },
                     Selected = () => _selectedHost == index,
                     OnSelect = () => SelectHost(index),
+                    // No edges: every arrow resolves here, against the live links.
+                    OnArrow = dir => GridArrow(index, dir),
+                    OnSecondary = () => GridBack(index),
                 });
-            }
-            for (int i = 0; i < sim.list_0.Count; i++)
-            {
-                var host = sim.list_0[i];
-                var slots = new int[] { -1, -1, -1, -1 };
-                var unlettered = new System.Collections.Generic.List<SimHost>();
-                foreach (var link in host.list_1)
-                {
-                    Maybe<int> id;
-                    SimHost dest;
-                    try
-                    {
-                        id = link.method_2(host).method_2(team);
-                        dest = link.method_1(host);
-                    }
-                    catch { continue; }
-                    if (!id.method_0()) continue; // no id on this side = not traversable from here
-                    int d = Array.IndexOf(rose, id.method_2());
-                    if (d < 0) { unlettered.Add(dest); continue; }
-                    if (slots[d] < 0) slots[d] = sim.list_0.IndexOf(dest);
-                }
-                // Ids the rose doesn't letter (the home RETURN link, -1) take the side their host
-                // is drawn on, if the lettered ids left it free (PB021's SJ0: 800/801/802 + -1 west).
-                foreach (var dest in unlettered)
-                {
-                    int d = DrawnDirection(host, dest);
-                    if (d >= 0 && slots[d] < 0) slots[d] = sim.list_0.IndexOf(dest);
-                }
-                for (int d = 0; d < 4; d++)
-                    if (slots[d] >= 0) b.Connect(GridId(i), CompassDirs[d], GridId(slots[d]));
             }
             b.PopContext();
         }
 
         private static ControlId GridId(int hostIndex) => ControlId.Structural("ed.grid." + hostIndex);
 
-        // Which side of `from` the host `to` is drawn on, in the map grid's own frame (the frame
-        // the rose letters: +y north, +x east) — the dominant axis of the centre-to-centre delta.
-        // NOT used for lettered ids: the home link is 800 (north) on all three compass maps yet
-        // drawn running east. Equal axes = -1 (no honest side to pick).
+        private static readonly string[] GridDirKeys =
+            { "editor.grid.dir.up", "editor.grid.dir.right", "editor.grid.dir.down", "editor.grid.dir.left" };
+
+        // The ways out of a grid host — "up right left", space-joined (user spec) — the directions an arrow travels
+        // from here (ids left to the travel itself; user spec, 2026-10-27). Null when none.
+        private static string GridDirections(int hostIndex)
+        {
+            var links = LinksFrom(Editor, hostIndex);
+            if (links == null) return null;
+            var parts = new System.Collections.Generic.List<string>();
+            for (int d = 0; d < 4; d++)
+            {
+                int dir = d;
+                if (links.Exists(l => l.Dir == dir && l.Dest >= 0)) parts.Add(Loc.T(GridDirKeys[d]));
+            }
+            return parts.Count == 0 ? null : string.Join(" ", parts);
+        }
+
+        // N,E,S,W — the LinkView.Dir order.
+        private static int GridDirIndex(GraphDir dir)
+        {
+            switch (dir)
+            {
+                case GraphDir.Up: return 0;
+                case GraphDir.Right: return 1;
+                case GraphDir.Down: return 2;
+                case GraphDir.Left: return 3;
+                default: return -1;
+            }
+        }
+
+        private bool GridArrow(int from, GraphDir dir)
+        {
+            int d = GridDirIndex(dir);
+            var links = LinksFrom(Editor, from);
+            if (d < 0 || links == null) return false;
+            var candidates = links.FindAll(l => l.Dir == d && l.Dest >= 0);
+            if (candidates.Count == 0) return false; // nothing drawn that way: the plain edge
+            // In drawn order along the host's edge, read in the arrow frame: left to right for
+            // Up/Down links, top to bottom for Left/Right (host.list_1 order is authoring order —
+            // PB012's ATM row came out 806, 805, 804, 801, 800).
+            candidates.Sort((x, y) => x.Along != y.Along ? x.Along.CompareTo(y.Along) : x.Index.CompareTo(y.Index));
+            if (candidates.Count == 1)
+            {
+                GridTravel(from, candidates[0].Dest, candidates[0].Row);
+                return true;
+            }
+            OpenGridChoice(from, d, candidates);
+            return true;
+        }
+
+        private void GridTravel(int from, int to, string spoken)
+        {
+            _gridTrail.Add(from);
+            GoToGridHost(to, spoken);
+        }
+
+        private void GoToGridHost(int to, string spoken)
+        {
+            SelectHost(to, fromGrid: true);
+            Navigation.FocusNode(GridId(to), announce: false);
+            string dirs = GridDirections(to);
+            Speech.Tts.Speak(dirs == null ? spoken : spoken + ", " + dirs, interrupt: true);
+        }
+
+        // Backspace: back to the host the last grid travel left, whether or not a link leads
+        // there (one-way links). Spoken like a travel when one does, else just the host name.
+        private void GridBack(int at)
+        {
+            if (_gridTrail.Count == 0)
+            {
+                Speech.Tts.Speak(Loc.T("editor.grid.noback"), interrupt: true);
+                return;
+            }
+            int prev = _gridTrail[_gridTrail.Count - 1];
+            _gridTrail.RemoveAt(_gridTrail.Count - 1);
+            string spoken = null;
+            var links = LinksFrom(Editor, at);
+            if (links != null)
+            {
+                var back = links.Find(l => l.Dest == prev);
+                if (back != null) spoken = back.Row;
+            }
+            GoToGridHost(prev, spoken ?? HostName(HostAt(prev)));
+        }
+
+        // ---- the grid chooser: several links leave the host the pressed way (a wide host with
+        // a row of links along one edge). A modal list of their link rows; Enter travels,
+        // Backspace/Escape returns to the grid host. ----
+
+        private int _gridChoiceFrom = -1, _gridChoiceDir = -1;
+        private System.Collections.Generic.List<int> _gridChoiceLinks; // host.list_1 indexes
+
+        private bool GridChoiceOpen => _gridChoiceLinks != null;
+
+        private void OpenGridChoice(int from, int dir, System.Collections.Generic.List<LinkView> candidates)
+        {
+            _gridChoiceFrom = from;
+            _gridChoiceDir = dir;
+            _gridChoiceLinks = candidates.ConvertAll(l => l.Index);
+            Navigation.ForgetStop("gridpop");
+            Navigation.FocusStop("gridpop");
+        }
+
+        private void ClearGridChoice()
+        {
+            _gridChoiceLinks = null;
+            _gridChoiceFrom = _gridChoiceDir = -1;
+        }
+
+        private void CancelGridChoice()
+        {
+            int from = _gridChoiceFrom;
+            ClearGridChoice();
+            if (from >= 0) Navigation.FocusNode(GridId(from));
+        }
+
+        private bool BuildGridChoice(GraphBuilder b)
+        {
+            int from = _gridChoiceFrom, dir = _gridChoiceDir;
+            var links = LinksFrom(Editor, from);
+            if (links == null) return false;
+            // Re-resolved per build like every row: a link that stops existing (or turns) drops out.
+            var rows = links.FindAll(l => _gridChoiceLinks.Contains(l.Index) && l.Dir == dir && l.Dest >= 0);
+            if (rows.Count == 0) return false;
+            b.BeginStop("gridpop");
+            foreach (var row in rows)
+            {
+                var link = row;
+                b.AddItem(ControlId.Structural("ed.gridpop." + link.Index), new NodeVtable
+                {
+                    ControlType = ControlTypes.Text,
+                    Announcements = new[] { new NodeAnnouncement(() => link.Row, kind: AnnouncementKinds.Label) },
+                    OnActivate = () =>
+                    {
+                        ClearGridChoice();
+                        GridTravel(from, link.Dest, link.Row);
+                    },
+                    OnSecondary = CancelGridChoice,
+                });
+            }
+            return true;
+        }
+
+        // Which side of `from` the host `to` is drawn on, in the grid frame — the dominant axis
+        // of the centre-to-centre delta. Only the LAST resort of LinkDirection (every link
+        // carries a drawn axis). Equal axes = -1 (no honest side to pick).
         private static int DrawnDirection(SimHost from, SimHost to)
         {
             try
@@ -147,17 +271,60 @@ namespace Echopunks.Screens
             catch { return -1; }
         }
 
-        private void BuildLinks(GraphBuilder b, EditorScreen e)
+        // The way a link leaves `from` (0..3 = N,E,S,W), off the link's own drawn geometry. Links
+        // are never diagonal (Sim's builders throw on one), so each has an axis: a TWO-cell link
+        // carries its direction host_0 -> host_1 (GEnum177 1..4 = +x,+y,-x,-y — reversed from the
+        // far end); a ONE-cell link (GEnum177 0 — the plate-less art-map links) carries only the
+        // drawn bridge's axis (GEnum168 0 = x, 1 = y — EditorScreen's bridge draw and the move
+        // animation both read it so), signed by where the far host sits along it.
+        private static int LinkDirection(SimHostLink link, SimHost from, SimHost to)
         {
-            var sim = TheSim(e);
-            if (sim == null || _selectedHost >= sim.list_0.Count) return;
-            var host = sim.list_0[_selectedHost];
+            try
+            {
+                int g = (int)link.genum177_0;
+                if (g != 0)
+                {
+                    if (!link.method_0(from)) g = g > 2 ? g - 2 : g + 2;
+                    switch (g)
+                    {
+                        case 1: return 1;
+                        case 2: return 0;
+                        case 3: return 3;
+                        default: return 2;
+                    }
+                }
+                Range2 a = from.range2_0, c = to.range2_0;
+                int dx = (c.Start.int_0 + c.End.int_0) - (a.Start.int_0 + a.End.int_0);
+                int dy = (c.Start.int_1 + c.End.int_1) - (a.Start.int_1 + a.End.int_1);
+                int axis = (int)link.genum168_0;
+                if (axis == 0 && dx != 0) return dx > 0 ? 1 : 3;
+                if (axis == 1 && dy != 0) return dy > 0 ? 0 : 2;
+            }
+            catch { }
+            return DrawnDirection(from, to);
+        }
+
+        // One link as seen FROM a host — exactly the links stop's rows (same gating, same words),
+        // which the grid travels and speaks too.
+        private sealed class LinkView
+        {
+            public int Index;   // in host.list_1
+            public int Dest;    // sim.list_0 index of the far host (-1 = not a listed host)
+            public int Dir;     // 0..3 = N,E,S,W (-1 = no honest side)
+            public string Row;  // "One way, 800, INBOX, locked"
+            public int Along;   // position along the host's edge, in reading order for Dir
+        }
+
+        private static System.Collections.Generic.List<LinkView> LinksFrom(EditorScreen e, int hostIndex)
+        {
+            var sim = e == null ? null : TheSim(e);
+            if (sim == null || hostIndex < 0 || hostIndex >= sim.list_0.Count) return null;
+            var host = sim.list_0[hostIndex];
             Team team;
             try { team = e.method_24(); }
-            catch { return; }
+            catch { return null; }
 
-            b.BeginStop("links");
-            b.PushContext(Loc.T("editor.links", new { host = HostName(host) }));
+            var views = new System.Collections.Generic.List<LinkView>();
             for (int i = 0; i < host.list_1.Count; i++)
             {
                 var link = host.list_1[i];
@@ -192,7 +359,9 @@ namespace Echopunks.Screens
                 }
                 catch { }
                 if (plateless && !locked) localId = GStruct10.gstruct10_0;
-                var dest = link.method_1(host);
+                SimHost dest;
+                try { dest = link.method_1(host); }
+                catch { continue; }
                 bool farHasId = false;
                 try { farHasId = link.method_2(dest).method_2(team).method_0(); } catch { }
                 if (plateless && !locked) farHasId = false;
@@ -208,18 +377,48 @@ namespace Echopunks.Screens
                 bool speakLocked = locked && (flatTiles || !localId.method_0());
                 string idPart = localId.method_0() ? localId.method_2() + ", "
                     : bothBlank ? Loc.T("text.blank") + ", " : "";
-                string other = HostName(dest);
                 bool oneWay = localId.method_0() && !farHasId;
-                int destIndex = sim.list_0.IndexOf(dest);
-                b.AddItem(ControlId.Structural("ed.link." + _selectedHost + "." + i), new NodeVtable
+                int dir = LinkDirection(link, host, dest);
+                int along = 0;
+                try
+                {
+                    var cell = link.method_0(host) ? link.index2_0 : link.index2_1;
+                    along = dir == 0 || dir == 2 ? cell.int_0 : -cell.int_1;
+                }
+                catch { }
+                views.Add(new LinkView
+                {
+                    Index = i,
+                    Dest = sim.list_0.IndexOf(dest),
+                    Dir = dir,
+                    Along = along,
+                    Row = (oneWay ? Loc.T("editor.link.oneway") + ", " : "")
+                        + idPart + HostName(dest)
+                        + (speakLocked ? ", " + Loc.T("editor.link.locked") : ""),
+                });
+            }
+            return views;
+        }
+
+        private void BuildLinks(GraphBuilder b, EditorScreen e)
+        {
+            var sim = TheSim(e);
+            if (sim == null || _selectedHost >= sim.list_0.Count) return;
+            var host = sim.list_0[_selectedHost];
+            var links = LinksFrom(e, _selectedHost);
+            if (links == null) return;
+
+            b.BeginStop("links");
+            b.PushContext(Loc.T("editor.links", new { host = HostName(host) }));
+            foreach (var view in links)
+            {
+                var link = view;
+                b.AddItem(ControlId.Structural("ed.link." + _selectedHost + "." + link.Index), new NodeVtable
                 {
                     ControlType = ControlTypes.Text,
                     Announcements = new[]
                     {
-                        new NodeAnnouncement(() => (oneWay ? Loc.T("editor.link.oneway") + ", " : "")
-                            + idPart + other
-                            + (speakLocked ? ", " + Loc.T("editor.link.locked") : ""),
-                            kind: AnnouncementKinds.Label),
+                        new NodeAnnouncement(() => link.Row, kind: AnnouncementKinds.Label),
                     },
                     // Enter = traverse, "as if you scrolled to the destination": it becomes the
                     // selected host AND the hosts stop's remembered row (stop landings prefer
@@ -227,9 +426,9 @@ namespace Echopunks.Screens
                     // that landing is the one the differ announces.
                     OnActivate = () =>
                     {
-                        if (destIndex < 0) return;
-                        SelectHost(destIndex);
-                        Navigation.FocusNode(ControlId.Structural("ed.host." + destIndex), announce: false);
+                        if (link.Dest < 0) return;
+                        SelectHost(link.Dest);
+                        Navigation.FocusNode(ControlId.Structural("ed.host." + link.Dest), announce: false);
                         Navigation.FocusStop("links");
                     },
                 });

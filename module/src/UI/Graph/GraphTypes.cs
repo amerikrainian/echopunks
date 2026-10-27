@@ -125,6 +125,12 @@ namespace Echopunks.UI.Graph
         /// cannot see it.</summary>
         public Func<int, bool> OnRegionJump;
 
+        /// <summary>Optional. An arrow pressed while this node is focused and NO edge leads that
+        /// way: the node may act instead (return true when handled; false = the default
+        /// edge-of-graph behavior). For a direction with SEVERAL candidate destinations an edge
+        /// cannot express — the editor's host grid opens a chooser there.</summary>
+        public Func<GraphDir, bool> OnArrow;
+
         /// <summary>Optional (with <see cref="TextValue"/>). Marks a LIVE TYPE-TARGET: while this
         /// node is focused, printable keys belong to a text field (the host game's or ours) — the
         /// input pipeline stands its Space/Backspace bindings down so characters flow, and speaks

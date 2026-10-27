@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.2.4
+
+- The network topology grid is now always drawn, in addition to having the list of links.
+
 ## V0.2.3
 
 - The execution log now holds the state of each EXA as it executes its instructions.

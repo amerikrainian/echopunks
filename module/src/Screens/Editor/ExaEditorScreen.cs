@@ -164,7 +164,12 @@ namespace Echopunks.Screens
             var e = Editor;
             if (e == null) return;
             // The file-values popup is MODAL while open: it is the whole graph (Enter or
-            // Backspace closes it, back to the file row).
+            // Backspace closes it, back to the file row). The grid chooser likewise.
+            if (GridChoiceOpen)
+            {
+                if (BuildGridChoice(b)) return;
+                ClearGridChoice(); // its links vanished — fall through to the normal graph
+            }
             if (FilePopupOpen)
             {
                 if (BuildFilePopup(b)) return;

@@ -29,6 +29,8 @@ namespace Echopunks.Screens
                 _popupGoalHost = _popupGoalRequired = -1;
                 _goalPopup = false;
                 _goalPopupPending = 0;
+                ClearGridChoice();
+                _gridTrail.Clear(); // host indexes are per puzzle
                 _runToLine = 0;
                 _suppressRunAnnounce = false;
                 _testLog.Clear();

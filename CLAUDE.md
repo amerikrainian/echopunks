@@ -752,7 +752,7 @@ Models the name-preserved `EditorScreen` for every mode (meta.genum18_0: 0 norma
 throughout (reset-or-leave), except while a mod-side popup holds ModalCapturesEscape.
 
 **Tab stops, in order** (each absent when empty/inapplicable): task → windows → hosts
-→ grid (compass maps) → links → files → registers → sign → problems → code → sprite (sandbox) → screen
+→ grid → links → files → registers → sign → problems → code → sprite (sandbox) → screen
 (sandbox, armed) → stats → controls → go-to-cycle → test log → execution log →
 solution. Host-scoped info (links/files/registers/sign) always follows the SELECTED
 host, never a general stop (user rule).
@@ -1198,18 +1198,32 @@ may leak. The rulebook accumulated so far:
   the empty-drawn-value word; PB028's scripted-terminal corridor, 2026-09-06).
   Single-cell hosts DO draw their link ids —
   speak them.
-  GRID STOP (2026-10-23, Network.cs BuildGrid): on maps with a CompassRoses entry a "Grid" stop
-  sits between hosts and links — one raw node per host (name only, no positions), Up/Right/Down/
-  Left TRAVEL the link the rose letters N/E/S/W; the links stop is unchanged. Directions come
-  from the LETTERED ids, never geometry (the home link is 800 = north on all three maps yet drawn
-  running east); unlettered ids (the -1 home return) take the side their host is drawn on (grid
-  frame, dominant axis of the doubled-centre delta) if that side is free. ONE selection
+  GRID STOP (2026-10-23; EVERY map since 2026-10-27, Network.cs BuildGrid): a "Grid" stop sits
+  between hosts and links — one raw EDGE-LESS node per host (label = name, value = its ways out,
+  "up right left", space-joined, user spec); every arrow resolves in NodeVtable.OnArrow (graph
+  core hook: runs when no edge leads that way) against the live LinksFrom view — the links stop's
+  exact rows (same gating, same words), so travel speaks "800, OVEN, up" like the row + the new
+  host's ways out. Directions come from DRAWN GEOMETRY on every map, the compass maps included
+  (user decision — the rose disagrees only on the home link, 800 = north yet drawn east): links are
+  never diagonal (Sim.method_9 throws "Diagonal links are not allowed"); a two-cell link carries
+  GEnum177 1..4 = +x,+y,-x,-y from host_0 (reversed from the far end); a ONE-cell link (GEnum177 0,
+  the plate-less art-map links) carries only the bridge axis GEnum168 (0 = x, 1 = y), signed by
+  the far host's centre. Frame = the rose's: Up = +y = screen up-left, Right = +x = up-right (the
+  isometric projection, EditorScreen.smethod_0, y-up). All 48 maps swept: no direction ambiguous,
+  but SEVERAL links one way is common (copy shop, ATM, DNA, every modem) — that opens the CHOOSER,
+  a modal "gridpop" stop of those link rows sorted along the host's edge (left-to-right for
+  Up/Down, top-to-bottom for Left/Right; host.list_1 order is authoring order — PB012 came out
+  806..800); Enter travels, Backspace/Escape back to the host. BACKSPACE on a grid node walks the
+  TRAIL (_gridTrail, every grid travel's origin) back one host whether or not a link returns
+  there — spoken like a travel when one does, else the bare name; "No previous host" when empty.
+  Any selection change NOT from grid travel (SelectHost's fromGrid flag) clears the trail.
+  ONE selection
   (_selectedHost via SelectHost) behind hosts rows, grid travel and link traversal; the hosts
   and grid stops forget their stop memory on every build while focus is outside them
   (LandOnSelectedHost — memory beats Selected, and a traversal's vanishing link row makes the
   reconcile fallback REMEMBER the previous stop's last node), so entering either lands on the
-  selected host. Walked live on PB021 2026-10-23. Runtime flips (a modem dial setting ids + unlocking) are pure model
-  state the per-frame re-resolve already speaks.
+  selected host. Walked live on PB021 2026-10-23, PB003B/PB023 2026-10-27. Runtime flips (a modem
+  dial setting ids + unlocking) are pure model state the per-frame re-resolve already speaks.
 - ART-LETTERED HOSTS beyond UC Berkeley go one at a time through the ArtLetteredHosts
   table (Readouts.cs, keyed "puzzle id/internal name" — PB032's mainframe slab).
   COVER CAPTIONS shared by several covered hosts carry the hosts-stop position exactly

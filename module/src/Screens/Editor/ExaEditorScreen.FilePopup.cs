@@ -205,6 +205,7 @@ namespace Echopunks.Screens
             // Escape closes the popups (their game-side Escape is suppressed while
             // ModalCapturesEscape holds — see GameKeySuppression). First match wins, so a
             // file popup stacked over the goal popup closes first, back onto its goal row.
+            if (GridChoiceOpen) yield return new ElementAction(ActionIds.Back, CancelGridChoice);
             if (FilePopupOpen) yield return new ElementAction(ActionIds.Back, CloseFilePopup);
             if (_goalPopup) yield return new ElementAction(ActionIds.Back, CloseGoalPopup);
         }
@@ -222,6 +223,6 @@ namespace Echopunks.Screens
 
         /// <summary>The popups are mod-side only — Escape must close THEM, not act in the game
         /// (reset-or-leave would close the whole task under the popup).</summary>
-        public override bool ModalCapturesEscape => FilePopupOpen || _goalPopup;
+        public override bool ModalCapturesEscape => GridChoiceOpen || FilePopupOpen || _goalPopup;
     }
 }

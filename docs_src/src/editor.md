@@ -9,6 +9,7 @@ Tab goes through these groups in this order. Empty groups are skipped.
 | Task | The task description, the goal checklist, and the Show Goal button. | Alt+1 |
 | Windows | Your EXAs, then file windows. | Alt+2 |
 | Hosts | One row per host, with who's standing in it. | Alt+3 |
+| Grid | The hosts as a map you walk with the arrows. See "The Grid" below. | |
 | *Host* links | Links leaving the host selected in Hosts. | |
 | *Host* files | Files in the selected host. | |
 | *Host* registers | Hardware registers in the selected host, with live values. | |
@@ -52,6 +53,14 @@ On links and hosts you'll also hear:
 - **"blank"** instead of a number: the connection is drawn with an empty number plate.
 - **"locked"**: the connection is drawn but closed for now.
 - **"Unnamed host 4"**: a host drawn without a name, numbered by its position in Hosts.
+
+## The Grid
+
+The Grid group is the same network laid out as a map. Each host reads its name, then the ways out of it: "A, up right left".
+
+- An arrow travels the link drawn leaving the host that way and reads it like its link row: "800, B, up down". The selected host moves with you, so Links, files and registers follow.
+- If several links leave the same way (a row of hosts along one side), a list of them opens instead. Up and Down pick, Enter travels, Escape or Backspace goes back.
+- Backspace steps back to the host you came from, one host per press, even across a one-way link. If a link leads back it reads like a travel; if not, just the host's name. Changing host from Hosts or Links starts a fresh trail.
 
 ## Windows
 

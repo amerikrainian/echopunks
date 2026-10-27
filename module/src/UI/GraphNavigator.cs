@@ -393,6 +393,16 @@ namespace Echopunks.UI
             var move = _graph.Move(ToDir(dir));
             if (move.Moved) { SelectOnLanding(move); AnnounceMove(move); return true; }
 
+            // No edge that way: the node may handle the arrow itself.
+            var onArrow = focusNode.Vtable?.OnArrow;
+            if (onArrow != null)
+            {
+                bool handled = false;
+                try { handled = onArrow(ToDir(dir)); }
+                catch (System.Exception ex) { Log.Error("[nav] OnArrow threw", ex); }
+                if (handled) return true;
+            }
+
             // At an edge. Left/Right get tree semantics: expand/collapse a group, descend into an
             // expanded one, ascend from a child.
             if (dir == NavDirection.Left || dir == NavDirection.Right)
