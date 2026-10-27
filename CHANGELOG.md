@@ -2,7 +2,7 @@
 
 ## V0.2.4
 
-- The network topology grid is now always drawn, in addition to having the list of links.
+- The network topology grid is now always drawn, in addition to having the list of links. One-way links still trap your arrows, but you can press backspace to backtrack regardless if an actual link exists.
 
 ## V0.2.3
 
