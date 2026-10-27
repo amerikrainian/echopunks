@@ -90,6 +90,9 @@ namespace Echopunks.UI
         /// for the dev log line and the unit tests).</summary>
         public int DroppedGroups { get; private set; }
 
+        /// <summary>Slots reserved by the group key and start lists (tests and diagnostics).</summary>
+        internal int IndexCapacity => _order.Capacity + _start.Capacity;
+
         /// <summary>Distinct texts held (tests and diagnostics).</summary>
         internal int DistinctTexts => _strings.Count;
 
@@ -97,11 +100,18 @@ namespace Echopunks.UI
         {
             _strings = new List<string>();
             _ids = new Dictionary<string, int>(StringComparer.Ordinal);
+            // Release capacity, not just contents: the store is static, so a list cleared in
+            // place kept the biggest run's peak reserved for the whole session (a 599k-cycle
+            // run left 12 MB of empty key/start capacity behind for every later run).
             _chunks.Clear();
+            _chunks.Capacity = 0;
             _tagChunks.Clear();
+            _tagChunks.Capacity = 0;
             _length = 0;
             _order.Clear();
+            _order.Capacity = 0;
             _start.Clear();
+            _start.Capacity = 0;
             _pos = _keyOrder == null ? new Dictionary<TKey, int>() : null;
             _late.Clear();
             _lateTags.Clear();

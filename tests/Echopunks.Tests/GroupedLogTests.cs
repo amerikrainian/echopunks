@@ -168,6 +168,18 @@ namespace Echopunks.Tests
         }
 
         [Fact]
+        public void ClearReleasesTheIndexCapacity()
+        {
+            var log = new GroupedLog<int>(1000000, Comparer<int>.Default);
+            for (int c = 0; c < 100000; c++) log.Add(c, "x");
+            Assert.True(log.IndexCapacity >= 200000);
+            log.Clear();
+            Assert.Equal(0, log.IndexCapacity);
+            log.Add(0, "y"); // still usable
+            Assert.Equal("y", log.Entries(0)[0]);
+        }
+
+        [Fact]
         public void StoresEachDistinctTextOnce()
         {
             var log = new GroupedLog<int>(1000000);
