@@ -38,6 +38,14 @@ namespace Echopunks.Patches
     /// invisible), and victimless kill poses (mode-2 NPC terminals fire one every cycle they
     /// idle — pure spam). MAKE shows the grab pose but no icon vanishes and no id was ever
     /// drawn, so it logs as "made a file", id-less until dropped.
+    ///
+    /// STATE COLUMNS (2026-10-27): each player instruction row also records what that EXA's
+    /// window showed as the instruction was dispatched — X, T, F (the value under the cursor),
+    /// the held file's id, the cursor position, host, M (the pending outgoing value) and its
+    /// Local/Global mode; the sandbox adds GX/GY/GZ/CI/CO — as one <see cref="ExecStateStore"/>
+    /// record, appended only when it differs from the EXA's last one. Raw values only: words are
+    /// built when a row is shown. Effect rows carry none (N/A), and so does an EXA standing in
+    /// a hidden host (the game draws no window for it).
     /// </summary>
     internal static class ExecutionCapture
     {
@@ -101,6 +109,112 @@ namespace Echopunks.Patches
             Store.Clear();
             _lines.Clear();
             _lastEffects.Clear();
+            Layout = null;
+            _stateSim = null;
+            _hostText.Clear();
+            _fileText.Clear();
+        }
+
+        // ---- state columns ----
+
+        internal enum StateField { X, T, GX, GY, GZ, CI, CO, F, File, Cursor, Host, M, Mode }
+
+        private const int StateFieldCount = 13;
+
+        // Column order = what a debugging player reaches for first (user-approved, 2026-10-27);
+        // the sandbox's sprite/collision fields matter more there than files, so they follow T.
+        private static readonly StateField[] NormalLayout =
+        {
+            StateField.X, StateField.T, StateField.F, StateField.File, StateField.Cursor,
+            StateField.Host, StateField.M, StateField.Mode,
+        };
+
+        private static readonly StateField[] SandboxLayout =
+        {
+            StateField.X, StateField.T, StateField.GX, StateField.GY, StateField.GZ,
+            StateField.CI, StateField.CO, StateField.F, StateField.File, StateField.Cursor,
+            StateField.Host, StateField.M, StateField.Mode,
+        };
+
+        /// <summary>The state columns of the current run's records (null until the first
+        /// player instruction records). Fixed per run: the editor's mode never changes.</summary>
+        public static StateField[] Layout { get; private set; }
+
+        private static readonly int[] _all = new int[StateFieldCount];
+        private static int[] _record;
+        private static Sim _stateSim;
+
+        // Display texts interned per CYCLE (cleared in the cycle prefix): host names can flip at
+        // runtime (reveals), and one lookup per host per cycle keeps the dispatch hot path cheap.
+        private static readonly Dictionary<SimHost, int> _hostText = new Dictionary<SimHost, int>();
+        private static readonly Dictionary<SimFile, int> _fileText = new Dictionary<SimFile, int>();
+
+        private static int Value(ExecStateStore states, ExaValue v)
+        {
+            if (v.nullable_0.HasValue) return v.nullable_0.Value;
+            return states.Text(v.string_0);
+        }
+
+        /// <summary>The EXA's state as its window shows it, as a record of the run's store; -1
+        /// for N/A (hidden host, or the capture failed).</summary>
+        private static int CaptureState(Sim sim, SimExa exa, EditorScreen editor)
+        {
+            try
+            {
+                var states = Store.States;
+                if (Layout == null)
+                {
+                    Layout = ExaEditorScreen.SandboxMode(editor) ? SandboxLayout : NormalLayout;
+                    states.Reset(Layout.Length);
+                    _record = new int[Layout.Length];
+                }
+                if (!ReferenceEquals(sim, _stateSim))
+                {
+                    _stateSim = sim; // a test advance or battle round: entity numbers restart
+                    states.ForgetOwners();
+                    _hostText.Clear();
+                    _fileText.Clear();
+                }
+                var host = exa.method_0();
+                if (Hidden(host)) return -1;
+
+                _all[(int)StateField.X] = Value(states, exa.exaValue_0);
+                _all[(int)StateField.T] = Value(states, exa.exaValue_1);
+                _all[(int)StateField.F] = ExecStateStore.Absent;
+                _all[(int)StateField.File] = ExecStateStore.Absent;
+                _all[(int)StateField.Cursor] = ExecStateStore.Absent;
+                if (exa.maybe_3.method_0())
+                {
+                    var file = exa.maybe_3.method_2();
+                    int cursor = exa.int_1;
+                    _all[(int)StateField.F] = cursor >= 0 && cursor < file.list_0.Count
+                        ? Value(states, file.list_0[cursor])
+                        : ExecStateStore.End;
+                    int id;
+                    if (!_fileText.TryGetValue(file, out id))
+                        _fileText[file] = id = states.Text(ExaEditorScreen.FileId(file));
+                    _all[(int)StateField.File] = id;
+                    _all[(int)StateField.Cursor] = cursor;
+                }
+                int hostId;
+                if (host == null) hostId = ExecStateStore.Absent;
+                else if (!_hostText.TryGetValue(host, out hostId))
+                    _hostText[host] = hostId = states.Text(ExaEditorScreen.HostName(host));
+                _all[(int)StateField.Host] = hostId;
+                _all[(int)StateField.M] = exa.maybe_4.method_0()
+                    ? Value(states, exa.maybe_4.method_2())
+                    : ExecStateStore.Absent;
+                _all[(int)StateField.Mode] = exa.mbusMode_0 == (MBusMode)1 ? 1 : 0;
+                _all[(int)StateField.GX] = exa.int_4;
+                _all[(int)StateField.GY] = exa.int_5;
+                _all[(int)StateField.GZ] = exa.int_6;
+                _all[(int)StateField.CI] = exa.int_8;
+                _all[(int)StateField.CO] = exa.int_7;
+
+                for (int i = 0; i < Layout.Length; i++) _record[i] = _all[(int)Layout[i]];
+                return states.Record(exa.entityID_0.Number, _record);
+            }
+            catch { return -1; }
         }
 
         // The visible enemy/NPC effect rows of the most recent cycle, for the step echo's "All
@@ -126,7 +240,7 @@ namespace Echopunks.Patches
                 string instr = ListingLine(__0);
                 if (instr == null) return;
                 Store.Add(SimNarration.CurrentTest(editor), __instance.method_52(),
-                    __0.string_0 + ": " + instr);
+                    __0.string_0 + ": " + instr, CaptureState(__instance, __0, editor));
             }
             catch { }
         }
@@ -194,6 +308,7 @@ namespace Echopunks.Patches
         {
             _snapValid = false;
             _pendingWrites.Clear();
+            _hostText.Clear();
             try
             {
                 var editor = GameState.TopScreen() as EditorScreen;

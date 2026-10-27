@@ -1,4 +1,5 @@
 using System;
+using Echopunks.Game;
 using Echopunks.Localization;
 using Echopunks.UI;
 using Echopunks.UI.Graph;
@@ -24,22 +25,34 @@ namespace Echopunks.Screens
         // after it stops. Absent while empty, like the test log. Battle mode included — enemy
         // CODE is filtered at capture (it draws no window for anyone), but enemy VISIBLE
         // EFFECTS (travel, replication, grab/drop, kills, deaths — everything the map animates)
-        // land as rows after the cycle's player instructions (2026-08-25). ----
+        // land as rows after the cycle's player instructions (2026-08-25).
+        // A TABLE since 2026-10-27 (user design): each row is the instruction, then one column
+        // per state field the EXA's window showed as it was dispatched (ExecutionCapture's
+        // Layout), N/A on effect rows. Rows share a row key so Up/Down keep the column; each
+        // state cell sits under a context named by its column, so Left/Right speak "T, 7" and
+        // Up/Down just "7". The instruction column has no header — walking it reads exactly as
+        // the pre-table log did. ----
 
         private const int WindowRegions = 51; // materialized regions around a window's anchor
         private const int WindowRows = 1200;  // row budget guarding extreme fan-out runs
+        // The execution log's window counts every TABLE CELL (1 + state columns per row) and
+        // holds fewer cycles: the graph rebuilds every frame (~1.7 us per declared cell, measured
+        // 2026-10-27) and the window recenters on each rebuild, so 12 cycles either side are
+        // plenty for arrows and Ctrl+arrows.
+        private const int ExecWindowRegions = 25;
+        private const int ExecWindowNodes = 2400;
 
         /// <summary>Grow a window of consecutive group indexes outward from the anchor,
         /// alternating sides, until either budget is spent — at the list's ends the free side
         /// keeps going, so the tail still gets a full window. Shared by the execution and test
         /// log stops.</summary>
         private static void ExpandWindow(int count, int anchor, Func<int, int> rowsAt,
-            out int lo, out int hi)
+            out int lo, out int hi, int budget = WindowRows, int regions = WindowRegions)
         {
             lo = hi = anchor;
             int rows = rowsAt(anchor);
             bool grew = true;
-            while (grew && hi - lo + 1 < WindowRegions && rows < WindowRows)
+            while (grew && hi - lo + 1 < regions && rows < budget)
             {
                 grew = false;
                 if (hi + 1 < count)
@@ -48,7 +61,7 @@ namespace Echopunks.Screens
                     rows += rowsAt(hi);
                     grew = true;
                 }
-                if (lo > 0 && hi - lo + 1 < WindowRegions && rows < WindowRows)
+                if (lo > 0 && hi - lo + 1 < regions && rows < budget)
                 {
                     lo--;
                     rows += rowsAt(lo);
@@ -74,7 +87,8 @@ namespace Echopunks.Screens
             if (s == null || !s.StartsWith("ed.xlog.", StringComparison.Ordinal)) return null;
             string[] parts = s.Substring("ed.xlog.".Length).Split('.');
             int t, c, i;
-            if (parts.Length != 3 || !int.TryParse(parts[0], out t) || !int.TryParse(parts[1], out c)
+            // Row ids are "t.c.i" (the instruction cell); state cells append ".k".
+            if ((parts.Length != 3 && parts.Length != 4) || !int.TryParse(parts[0], out t) || !int.TryParse(parts[1], out c)
                 || !int.TryParse(parts[2], out i)) return null;
             return new ExecutionLog.CycleKey(t, c);
         }
@@ -116,14 +130,24 @@ namespace Echopunks.Screens
             var cycles = log.Cycles;
             int anchor = _execAnchor != null ? log.IndexOf(_execAnchor.Value) : -1;
             if (anchor < 0) anchor = cycles.Count - 1;
+            var layout = Patches.ExecutionCapture.Layout;
+            int columns = 1 + (layout != null ? layout.Length : 0);
             int lo, hi;
-            ExpandWindow(cycles.Count, anchor, i => log.Entries(cycles[i]).Count, out lo, out hi);
+            ExpandWindow(cycles.Count, anchor, i => log.Entries(cycles[i]).Count * columns, out lo, out hi,
+                ExecWindowNodes, ExecWindowRegions);
 
             bool multi = log.MultiTest;
             Func<bool, bool> jumpEdge = JumpExecLogEdge; // Home/End = the LOG's edges, not the window's
             Func<int, bool> regionJump = JumpExecTest;   // Ctrl+Up/Down = TESTS on multi-test runs
             b.BeginStop("execlog");
-            b.PushContext(Loc.T("editor.execlog"), positions: false);
+            b.PushContext(Loc.T("editor.execlog"), layout != null ? Loc.T("role.table") : null, positions: false);
+            var states = log.States;
+            // Per build, not per cell: the headers, and (per cycle, below) the column context
+            // ids — the announcer diffs parents by id, so a column shares one id per cycle.
+            int stateCols = layout != null ? layout.Length : 0;
+            var headers = new string[stateCols];
+            for (int c = 0; c < stateCols; c++) headers[c] = StateHeader(layout[c]);
+            var colIds = new ControlId[stateCols];
             for (int ci = lo; ci <= hi; ci++)
             {
                 var k = cycles[ci];
@@ -132,25 +156,91 @@ namespace Echopunks.Screens
                     ? Loc.T("editor.execlog.testcycle", new { test = k.Test + 1, n = k.Cycle })
                     : Loc.T("editor.cycle", new { n = k.Cycle }));
                 var entries = log.Entries(k);
+                var records = log.StateRecords(k);
+                string rowBase = "ed.xlog." + k.Test + "." + k.Cycle + ".";
+                for (int c = 0; c < stateCols; c++) colIds[c] = ControlId.Structural(rowBase + "col" + c);
                 for (int i = 0; i < entries.Count; i++)
                 {
                     string text = entries[i];
-                    b.AddItem(ControlId.Structural("ed.xlog." + k.Test + "." + k.Cycle + "." + i),
-                        new NodeVtable
+                    int record = records[i];
+                    b.StartRow("xlog");
+                    b.AddItem(ControlId.Structural(rowBase + i), new NodeVtable
+                    {
+                        ControlType = ControlTypes.Text,
+                        SpeaksOwnPosition = true, // the row is a bar; count within the cycle instead
+                        Announcements = new[]
+                        {
+                            new NodeAnnouncement(() => text, kind: AnnouncementKinds.Label),
+                            WindowPosition(i + 1, entries.Count),
+                        },
+                        OnJumpEdge = jumpEdge,
+                        OnRegionJump = regionJump,
+                    });
+                    for (int c = 0; c < stateCols; c++)
+                    {
+                        var field = layout[c];
+                        int col = c;
+                        b.PushContext(headers[c], positions: false, id: colIds[c]);
+                        b.AddItem(ControlId.Structural(rowBase + i + "." + c), new NodeVtable
                         {
                             ControlType = ControlTypes.Text,
+                            SpeaksOwnPosition = true,
                             Announcements = new[]
                             {
-                                new NodeAnnouncement(() => text, kind: AnnouncementKinds.Label),
+                                new NodeAnnouncement(() => StateCell(states, record, col, field),
+                                    kind: AnnouncementKinds.Label),
                             },
                             OnJumpEdge = jumpEdge,
                             OnRegionJump = regionJump,
                         });
+                        b.PopContext();
+                    }
+                    b.EndRow();
                 }
                 b.PopContext();
             }
             b.SetRegion(null);
             b.PopContext();
+        }
+
+        private static string StateHeader(Patches.ExecutionCapture.StateField field)
+        {
+            switch (field)
+            {
+                case Patches.ExecutionCapture.StateField.X: return Loc.T("editor.execlog.col.x");
+                case Patches.ExecutionCapture.StateField.T: return Loc.T("editor.execlog.col.t");
+                case Patches.ExecutionCapture.StateField.F: return Loc.T("editor.execlog.col.f");
+                case Patches.ExecutionCapture.StateField.File: return Loc.T("editor.execlog.col.file");
+                case Patches.ExecutionCapture.StateField.Cursor: return Loc.T("editor.execlog.col.cursor");
+                case Patches.ExecutionCapture.StateField.Host: return Loc.T("editor.execlog.col.host");
+                case Patches.ExecutionCapture.StateField.M: return Loc.T("editor.execlog.col.m");
+                case Patches.ExecutionCapture.StateField.Mode: return Loc.T("editor.execlog.col.mode");
+                case Patches.ExecutionCapture.StateField.GX: return Loc.T("editor.execlog.col.gx");
+                case Patches.ExecutionCapture.StateField.GY: return Loc.T("editor.execlog.col.gy");
+                case Patches.ExecutionCapture.StateField.GZ: return Loc.T("editor.execlog.col.gz");
+                case Patches.ExecutionCapture.StateField.CI: return Loc.T("editor.execlog.col.ci");
+                case Patches.ExecutionCapture.StateField.CO: return Loc.T("editor.execlog.col.co");
+            }
+            return null;
+        }
+
+        /// <summary>One state cell's words, built only when spoken — worded like the EXA
+        /// window readout (game "None"/"Local"/"Global", "end" past the file's last value).</summary>
+        private static string StateCell(ExecStateStore states, int record, int col,
+            Patches.ExecutionCapture.StateField field)
+        {
+            if (record < 0) return Loc.T("text.na");
+            int v = states.Field(record, col);
+            switch (field)
+            {
+                case Patches.ExecutionCapture.StateField.Mode:
+                    return v == 1 ? GameText.T("Local") : GameText.T("Global");
+                case Patches.ExecutionCapture.StateField.Host:
+                    return states.TextOf(v) ?? "?";
+            }
+            if (v == ExecStateStore.Absent) return GameText.T("None");
+            if (v == ExecStateStore.End) return Loc.T("editor.cursor.end");
+            return ExecStateStore.IsText(v) ? ValueSpeech(states.TextOf(v)) : v.ToString();
         }
 
         /// <summary>Ctrl+Up/Down on a log row: when the run spans several tests, hop TESTS —

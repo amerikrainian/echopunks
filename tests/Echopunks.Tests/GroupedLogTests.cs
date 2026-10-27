@@ -108,9 +108,18 @@ namespace Echopunks.Tests
         public void MatchesThePlainStoreExactly(int seed, int cap, int adds, int keySpace,
             double olderChance, int distinct, double uniqueChance, int clearEvery)
         {
+            // Both indexes: the key dictionary, and the ordered-key binary search (an older-key
+            // add that opens a NEW group arrives out of order — the dictionary fallback path).
+            Run(null, seed, cap, adds, keySpace, olderChance, distinct, uniqueChance, clearEvery);
+            Run(Comparer<int>.Default, seed, cap, adds, keySpace, olderChance, distinct, uniqueChance, clearEvery);
+        }
+
+        private static void Run(IComparer<int> order, int seed, int cap, int adds, int keySpace,
+            double olderChance, int distinct, double uniqueChance, int clearEvery)
+        {
             var rng = new Random(seed);
             var want = new ReferenceLog(cap);
-            var got = new GroupedLog<int>(cap);
+            var got = new GroupedLog<int>(cap, order);
             int newest = 0, unique = 0;
             for (int n = 1; n <= adds; n++)
             {
@@ -136,6 +145,26 @@ namespace Echopunks.Tests
                 }
             }
             AssertSame(want, got, keySpace);
+        }
+
+        [Fact]
+        public void OrderedKeysWithGapsFindEveryGroup()
+        {
+            var log = new GroupedLog<int>(1000000, Comparer<int>.Default);
+            for (int c = 0; c < 5000; c += 1 + c % 3) log.Add(c, "x" + c % 5); // skipped cycles
+            for (int c = 0; c < 5000; c++)
+            {
+                int i = log.IndexOf(c);
+                if (i < 0) continue;
+                Assert.Equal(c, log.Groups[i]);
+                Assert.Equal("x" + c % 5, log.Entries(c)[0]);
+            }
+            Assert.Equal(-1, log.IndexOf(2)); // keys run 0, 1, 3, 4, 6, 7, ...
+            Assert.Equal(-1, log.IndexOf(5));
+            Assert.Equal(1, log.IndexOf(1));
+            Assert.Equal(2, log.IndexOf(3));
+            Assert.Equal(-1, log.IndexOf(-5));
+            Assert.Equal(-1, log.IndexOf(99999));
         }
 
         [Fact]

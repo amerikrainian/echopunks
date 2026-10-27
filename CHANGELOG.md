@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.2.3
+
+- The execution log now holds the state of each EXA as it executes its instructions.
+
 ## V0.2.2
 
 - The GIS missions will now show the actual grid of nodes as opposed to only allowing  travel via lists of links. Hopefully this makes visualizing the connections easier.

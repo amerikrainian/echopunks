@@ -9,7 +9,9 @@ namespace Echopunks.UI
     /// own turn order) — a <see cref="GroupedLog{TKey}"/> (uncapped, runaway backstop) keyed by
     /// (test, cycle): cycle numbers RESTART AT 0 on every test run and battle round, so a cycle
     /// number alone never identifies a group. Adds tracking for whether the run spanned more
-    /// than one test, the cue for region labels to name theirs.
+    /// than one test, the cue for region labels to name theirs, and the STATE COLUMNS: each
+    /// entry's tag points into <see cref="States"/> (-1 = no state, the enemy/NPC effect rows),
+    /// compacted along with every backstop drop.
     /// </summary>
     internal sealed class ExecutionLog
     {
@@ -29,14 +31,27 @@ namespace Echopunks.UI
             public override int GetHashCode() { return Test * 397 ^ Cycle; }
         }
 
+        /// <summary>(test, cycle) ascending — the order keys arrive in, which lets the store
+        /// index its groups by binary search (see GroupedLog).</summary>
+        private sealed class CycleOrder : IComparer<CycleKey>
+        {
+            public static readonly CycleOrder Instance = new CycleOrder();
+            public int Compare(CycleKey a, CycleKey b)
+                => a.Test != b.Test ? a.Test.CompareTo(b.Test) : a.Cycle.CompareTo(b.Cycle);
+        }
+
         private readonly GroupedLog<CycleKey> _log;
         private int _firstTest = -1;
         private bool _multi;
 
         public ExecutionLog(int maxEntries = DefaultMaxEntries)
         {
-            _log = new GroupedLog<CycleKey>(maxEntries);
+            _log = new GroupedLog<CycleKey>(maxEntries, CycleOrder.Instance);
+            _log.Shed += () => States.Compact(_log.RemapTags);
         }
+
+        /// <summary>The state records the entries' tags point at.</summary>
+        public readonly ExecStateStore States = new ExecStateStore();
 
         /// <summary>Cycles holding entries, oldest first.</summary>
         public IReadOnlyList<CycleKey> Cycles => _log.Groups;
@@ -57,20 +72,28 @@ namespace Echopunks.UI
         public void Clear()
         {
             _log.Clear();
+            States.Reset(0);
             _firstTest = -1;
             _multi = false;
         }
 
-        public void Add(int test, int cycle, string text)
+        public void Add(int test, int cycle, string text) => Add(test, cycle, text, -1);
+
+        /// <summary>An entry whose <paramref name="state"/> is a <see cref="States"/> record
+        /// (-1 = none).</summary>
+        public void Add(int test, int cycle, string text, int state)
         {
             if (string.IsNullOrEmpty(text)) return;
             if (test < 0) test = 0;
             if (_firstTest < 0) _firstTest = test;
             else if (test != _firstTest) _multi = true;
-            _log.Add(new CycleKey(test, cycle), text);
+            _log.Add(new CycleKey(test, cycle), text, state);
         }
 
         public IReadOnlyList<string> Entries(CycleKey key) => _log.Entries(key);
+
+        /// <summary>The cycle's state records, index-aligned with <see cref="Entries"/>.</summary>
+        public IReadOnlyList<int> StateRecords(CycleKey key) => _log.Tags(key);
 
         /// <summary>The cycle's index in <see cref="Cycles"/>, or -1 when absent (never added,
         /// cleared, or shed by the backstop).</summary>

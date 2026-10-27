@@ -18,7 +18,7 @@ Tab goes through these groups in this order. Empty groups are skipped.
 | Simulation | Step, Run, Fast-forward, Pause, Reset. | |
 | Test log | After a run: errors and goal changes, by test run. | Alt+5 |
 | Go to cycle | Jump the execution log to a cycle. | |
-| Execution log | After a run: every instruction executed, by cycle. | |
+| Execution log | After a run: a table of every instruction executed, by cycle, with the EXA's registers, file, host and M as it ran each one. Left and Right move between columns. | |
 | Solution | Solution name, EXODUS Solution Browser, EXA program count, Create New EXA. | Alt+6 |
 
 Links, files and registers always follow the host selected in Hosts: arrow to a host, then Tab forward to see what's in it. A puzzle with special hardware (a sign, for example) adds its group next to its host.

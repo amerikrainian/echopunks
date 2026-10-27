@@ -903,6 +903,28 @@ Patches/ExecutionCapture on Sim.method_55, the single per-EXA dispatch):
   NOT logged because NOT drawn: enemy instructions/INTERNAL registers, enemy M,
   held-file WIPEs, victimless kill poses). Names via ExaDisplayName, hosts/ids via
   HostName/FileId, plates via RegName; hidden hosts mute.
+  STATE COLUMNS (2026-10-27, user design): the execution log is a TABLE — each row is
+  the instruction cell (header-less, so walking it reads as before, "n of m" within the
+  cycle) then one cell per state field, captured in the method_55 PREFIX = the EXA's
+  window state as the instruction was DISPATCHED: X, T, F (value under the cursor /
+  "end" / None), File (held id), Cursor (position), Host, M (pending outgoing value),
+  Mode; the sandbox inserts GX/GY/GZ/CI/CO after T (ExecutionCapture.Layout, fixed per
+  run). Rows share a row key (Up/Down keep the column); each state cell sits under a
+  column context (one id per cycle per column), so Left/Right speak "T, 7", Up/Down "7",
+  crossing a cycle "Cycle 5, T, 7". Effect rows and EXAs in a hidden host read N/A.
+  STORAGE: GroupedLog carries a parallel int TAG per entry = a record in UI/ExecStateStore
+  (fixed-stride int records in chunks; numbers raw, strings interned, Absent/End
+  sentinels), appended only when it differs from that EXA's (entity number) previous
+  record; owners forgotten per sim; each backstop drop compacts the records to the ones
+  survivors reference (GroupedLog.Shed + RemapTags). PB020 run: 625k entries / 245k
+  records ≈ 13 MB (was ≈ 2.5 MB); worst case ≈ 40 B/entry. The log's graph window is
+  25 cycles / 2400 cells (ExecWindowRegions/Nodes — ~1.7 µs per declared cell, rebuilt
+  every frame; ≈1 ms per frame on PB020). Text is built only when a cell is spoken.
+  GROUP INDEX: the execution log's GroupedLog takes a key order ((test, cycle) ascending)
+  and finds groups by BINARY SEARCH over its key list (newest group checked first = the add
+  hot path) instead of a key dictionary — cycles can skip (no group when nothing ran), so
+  not arithmetic; an out-of-order new key falls back to the dictionary until Clear. The
+  dictionary was the largest single cost of a 597k-cycle run (~20-35 MB est.).
 - Both logs: cleared on each ARMING (the last run stays browsable after it stops),
   absent while empty, UNCAPPED stores (shared BCL-pure UI/GroupedLog; a silent
   insurance cap — 10M exec / 2M test entries — only so an unattended loop can't OOM;

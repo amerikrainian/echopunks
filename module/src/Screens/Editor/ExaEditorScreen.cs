@@ -133,7 +133,7 @@ namespace Echopunks.Screens
 
         /// <summary>The Redshift sandbox (PB039): no tests/goals/scores, the map narrows,
         /// the right half is the drawn handheld console, EXAs are sprites.</summary>
-        private static bool SandboxMode(EditorScreen e) => GameMode(e) == 2;
+        internal static bool SandboxMode(EditorScreen e) => GameMode(e) == 2;
 
         /// <summary>PLAY MODE (sandbox only, no key of its own — user design 2026-08-29):
         /// while the homebrew game FREE-RUNS, every key belongs to the player — the Redshift
