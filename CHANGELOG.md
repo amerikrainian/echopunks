@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.2.5
+
+- When setting a breakpoint, your cursor will now be snapped to the line you stopped on. This didn't always happen; we used to race.
+- Breakpoints will now trigger on cycle 0 of a fresh sim run. The game thought it pointless and skipped it. I do too, but it confused me, so I fixed it.
+- Breakpoints will now tell you if they trigger during a new test.
+- When resetting, you'll now be told what test/cycle you stopped at as opposed to an arbitrary (read, current total) number of cycles.
+
 ## V0.2.4
 
 - The network topology grid is now always drawn, in addition to having the list of links. One-way links still trap your arrows, but you can press backspace to backtrack regardless if an actual link exists.
