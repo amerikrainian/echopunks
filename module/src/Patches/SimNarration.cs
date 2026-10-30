@@ -56,10 +56,13 @@ namespace Echopunks.Patches
         /// the run started on, bare otherwise.</summary>
         public static string Prefix(int test, string message)
         {
-            if (_runStartTest >= 0 && test >= 0 && test != _runStartTest)
+            if (IsLaterTest(test))
                 return Loc.T("editor.error.test", new { test = test + 1, message });
             return message;
         }
+
+        /// <summary>Did this test come after the one the run started on (the prefix rule)?</summary>
+        public static bool IsLaterTest(int test) => _runStartTest >= 0 && test >= 0 && test != _runStartTest;
 
         public static void Apply(Harmony harmony)
         {

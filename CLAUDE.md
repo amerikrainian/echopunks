@@ -804,8 +804,16 @@ caret — always defined), in the code field it pins whoever the label says. Tar
 SNAP FORWARD to the first real instruction at-or-after the line (blank/NOTE/MARK
 compile to EmptyLine and OCCUPY indices — refusing was a keyboard dead-end). Every arm
 announces "Running to line N: TEXT[, NAME]" (name only when >1 live instance — with
-one it is noise, user rule); an OnUpdate watch narrates the arrival pause and arms the
-step echo. Compile errors speak instead of arming (the game cancels silently).
+one it is noise, user rule); an OnUpdate watch narrates the arrival pause, arms the
+step echo and MOVES THE READ CURSOR to the arrival line (it was seeded on the run's first
+frame = cycle 0's top line, so arrows after an arrival walked from the top and the next F8
+aimed there — tester report, 2026-10-29). The game's marker (deob Class20) SKIPS ITS
+FIRST CHECK (bool_0 = true: never stop where the EXA already stands); an arm from EDIT
+mode clears it (ClearMarkerSkip) so a cycle-0 line stops at cycle 0 instead of the next
+test; mid-run arms keep it ("next time it gets here"). An arrival on a later test than
+the run started on speaks "Test n: Cycle c"; the stop speech tracks cycle AND test every
+running frame (cycle 0 included — the old non-zero guard reported the previous test's
+last cycle). Compile errors speak instead of arming (the game cancels silently).
 
 **Code stop**: ONE caret-owning TextEntryCaret node — the navigator bubbles all
 directional/edit input, suppression swallows ONLY Tab; arming = the game's focus QUEUE

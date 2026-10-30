@@ -79,6 +79,17 @@ namespace Echopunks.Screens
         private static readonly FieldInfo RunToMarkerField = Deobf.Field(typeof(EditorScreen), "maybe_13");
         private static readonly object EmptyRunToMarker =
             RunToMarkerField != null ? Activator.CreateInstance(RunToMarkerField.FieldType) : null;
+        // The marker object (deob Class20, internal) and its bool_0 = "skip the first check": the
+        // game never stops where the EXA already stands when the marker is set — mid-run that
+        // means "the next time it gets here", but at cycle 0 it turned F8 on the first line into
+        // "the next test" (see ClearMarkerSkip).
+        private static readonly Type RunToMarkerType =
+            RunToMarkerField?.FieldType.GetGenericArguments()[0];
+        private static readonly FieldInfo RunToMarkerValueField = RunToMarkerType == null ? null
+            : Array.Find(RunToMarkerField.FieldType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic),
+                f => f.FieldType == RunToMarkerType);
+        private static readonly FieldInfo RunToMarkerSkipField =
+            RunToMarkerType != null ? Deobf.Field(RunToMarkerType, "bool_0") : null;
 
         private static Maybe<int> StepBudget(EditorScreen e)
         {

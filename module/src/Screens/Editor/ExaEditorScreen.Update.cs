@@ -121,11 +121,16 @@ namespace Echopunks.Screens
                 _lastCycle = -1;
                 _runToLine = 0;
                 _suppressRunAnnounce = false;
-                Patches.SimNarration.ClearRunStart();
-                Speech.Tts.Speak(_runCycles > 0
-                    ? Loc.T("editor.stopped.at", new { n = _runCycles })
+                // The stop names the cycle (and test, when the run moved past the one it started
+                // on) it was last SEEN at — cycle 0 of a later test included: counting only
+                // non-zero cycles reported the previous test's last cycle there (the "Stopped at
+                // cycle 417" after a run-to landed on test 2's cycle 0, 2026-10-29).
+                Speech.Tts.Speak(_runCycles > 0 || Patches.SimNarration.IsLaterTest(_runTest)
+                    ? Patches.SimNarration.Prefix(_runTest, Loc.T("editor.stopped.at", new { n = _runCycles }))
                     : Loc.T("editor.stopped"));
+                Patches.SimNarration.ClearRunStart();
                 _runCycles = 0;
+                _runTest = -1;
                 _goalStates = null;
             }
             // A free run started by the NATIVE F4/F5 gets the same "Running." confirmation our
@@ -188,7 +193,11 @@ namespace Echopunks.Screens
 
             int cycles = 0;
             try { cycles = sim != null ? sim.method_52() : 0; } catch { }
-            if (running && cycles > 0) _runCycles = cycles;
+            if (running)
+            {
+                _runCycles = cycles;
+                _runTest = Patches.SimNarration.CurrentTest(e);
+            }
 
             if (_stepEcho && sim != null && cycles != _lastCycle)
             {
@@ -211,9 +220,18 @@ namespace Echopunks.Screens
                 {
                     if (running && StepBudget(e).method_0())
                     {
+                        // The read cursor lands where the run did — it was seeded on the run's
+                        // first frame (cycle 0, the top line), so arrows after an arrival walked
+                        // from there and the next F8 aimed near the top (tester report,
+                        // 2026-10-29).
+                        if (_runToExpanded >= 0)
+                        {
+                            _virtExa = _runToProgram;
+                            _virtLine = _runToExpanded;
+                        }
                         _stepEcho = true;
                         _lastCycle = cycles;
-                        SpeakStep(e, cycles);
+                        SpeakStep(e, cycles, Patches.SimNarration.CurrentTest(e));
                     }
                     _runToLine = 0;
                     _suppressRunAnnounce = false;
@@ -249,6 +267,7 @@ namespace Echopunks.Screens
         }
 
         private int _runCycles;
+        private int _runTest = -1; // the test the running sim was last seen on (stop speech)
         private int[] _goalStates;
         private string _refocusLog; // log stop to re-enter once its store refills (see arming)
         private int _refocusTtl;
@@ -257,9 +276,19 @@ namespace Echopunks.Screens
         // live player EXA), read from the macro-expanded source that actually executes.
         // One speech entry per event: the first interrupts (it arrived on a press), the rest
         // queue behind it — never one mashed-together string.
-        private void SpeakStep(EditorScreen e, int cycle)
+        /// <param name="test">A run-to ARRIVAL passes its test: a target that is not reached
+        /// again in the test the run started on lands in a later one, and "Cycle 0" alone
+        /// sounded like the run never moved — the cycle entry then names its test like every
+        /// other later-test event ("Test 2: Cycle 0").</param>
+        private void SpeakStep(EditorScreen e, int cycle, int test = -1)
         {
             var entries = StepEchoScope.All ? StepNarrationAll(e, cycle) : StepNarration(e, cycle);
+            if (test >= 0)
+            {
+                string bare = Loc.T("editor.cycle", new { n = cycle });
+                int at = entries.IndexOf(bare);
+                if (at >= 0) entries[at] = Patches.SimNarration.Prefix(test, bare);
+            }
             for (int i = 0; i < entries.Count; i++)
                 Speech.Tts.Speak(entries[i], interrupt: i == 0);
         }

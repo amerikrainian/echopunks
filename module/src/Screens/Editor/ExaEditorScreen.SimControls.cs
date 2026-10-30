@@ -155,6 +155,8 @@ namespace Echopunks.Screens
         // ignores — the OnUpdate watch below speaks the landing and arms the step echo. ----
 
         private int _runToLine;              // 1-based, for speech; 0 = idle
+        private int _runToExpanded = -1;     // the target's EXECUTING-listing line (read-cursor index)
+        private int _runToProgram;           // the target's solution number
         private bool _suppressRunAnnounce;   // the arm announce replaces the generic "Running."
 
         // F8 — unpinned (GEnum175 1): the marker matches ANY copy of the focused program,
@@ -405,7 +407,10 @@ namespace Echopunks.Screens
             if (name != null && LiveInstanceCount(program) <= 1) name = null;
             Invoke(PreActionMethod, e); // also clears any stale marker
             e.method_52(mode, program, EntityID.Exa(entityNumber), editing ? line : expanded);
+            if (editing) ClearMarkerSkip(e);
             _runToLine = line + 1;
+            _runToExpanded = expanded;
+            _runToProgram = program.method_0();
             _suppressRunAnnounce = true;
             _stepEcho = false;
             string text = string.IsNullOrWhiteSpace(lineText) ? "" : lineText.Trim();
@@ -413,6 +418,21 @@ namespace Echopunks.Screens
                     ? Loc.T("editor.runto", new { line = line + 1, text })
                     : Loc.T("editor.runto.exa", new { line = line + 1, text, exa = name }),
                 interrupt: true);
+        }
+
+        /// <summary>Armed from EDIT mode, the target counts from cycle 0: the game's marker skips
+        /// its first check (where the EXA already stands), which turned F8 on a line that runs
+        /// at cycle 0 into "the next time" — often the next test (user report, 2026-10-29).
+        /// Mid-run arms keep the skip: there it means "the next time it gets here".</summary>
+        private static void ClearMarkerSkip(EditorScreen e)
+        {
+            try
+            {
+                if (RunToMarkerValueField == null || RunToMarkerSkipField == null) return;
+                var marker = RunToMarkerValueField.GetValue(RunToMarkerField.GetValue(e));
+                if (marker != null) RunToMarkerSkipField.SetValue(marker, false);
+            }
+            catch (Exception ex) { Log.Error("[editor] run-to skip clear failed", ex); }
         }
 
         private void RunSim(bool fast)
